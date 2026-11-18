@@ -1,0 +1,1999 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#11110e">
+  <title>Spud-Survival</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ink: #f3f0e7;
+      --muted: #a7a493;
+      --gold: #d8b45d;
+      --gold-bright: #f0cd78;
+      --panel: rgba(22, 23, 19, .94);
+      --panel-soft: rgba(29, 30, 25, .88);
+      --line: rgba(220, 189, 111, .2);
+      --bg: #11120f;
+      --green: #879b66;
+      --red: #d27b6a;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font: 15px/1.5 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: .01em;
+    }
+
+    button, input { font: inherit; }
+    button { color: inherit; }
+    button:focus-visible, input:focus-visible { outline: 2px solid var(--gold-bright); outline-offset: 3px; }
+
+    .screen { display: none; min-height: 100vh; }
+    .screen.active { display: flex; }
+
+    .eyebrow {
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 750;
+      letter-spacing: .22em;
+      text-transform: uppercase;
+    }
+
+    .gold { color: var(--gold-bright); }
+    .muted { color: var(--muted); }
+
+    .button {
+      display: inline-flex;
+      min-height: 46px;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 0 20px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: rgba(255,255,255,.035);
+      color: var(--ink);
+      cursor: pointer;
+      font-weight: 700;
+      transition: background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+
+    .button:hover { border-color: rgba(240,205,120,.65); background: rgba(240,205,120,.09); transform: translateY(-1px); }
+    .button.primary { border-color: var(--gold); background: var(--gold); color: #201b10; }
+    .button.primary:hover { border-color: var(--gold-bright); background: var(--gold-bright); }
+    .button.small { min-height: 38px; padding: 0 15px; font-size: 13px; }
+    .button.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+
+    /* Replace the layered dark placeholder below with your PNG when it is ready:
+       background-image: linear-gradient(rgba(12,13,11,.70), rgba(12,13,11,.92)), url("your-background.png"); */
+    #main-menu {
+      position: relative;
+      overflow: hidden;
+      align-items: center;
+      background:
+        radial-gradient(ellipse at 68% 48%, rgba(133,105,46,.13), transparent 34%),
+        radial-gradient(ellipse at 80% 80%, rgba(74,83,49,.16), transparent 34%),
+        linear-gradient(115deg, rgba(12,13,11,.98) 8%, rgba(15,16,13,.83) 54%, rgba(14,15,12,.91)),
+        #151610;
+      /* Add your image here later, beneath the dark overlays above. */
+    }
+
+    #main-menu::before, #main-menu::after {
+      position: absolute;
+      content: "";
+      pointer-events: none;
+    }
+
+    #main-menu::before {
+      inset: 0;
+      opacity: .14;
+      background-image: linear-gradient(120deg, transparent 49.8%, rgba(222,190,110,.12) 50%, transparent 50.2%);
+      background-size: 130px 130px;
+      mask-image: linear-gradient(90deg, transparent, #000 65%);
+    }
+
+    #main-menu::after {
+      width: 430px;
+      height: 430px;
+      right: 8%;
+      top: 50%;
+      border: 1px solid rgba(216,180,93,.13);
+      border-radius: 50%;
+      box-shadow: 0 0 0 38px rgba(216,180,93,.025), 0 0 0 82px rgba(216,180,93,.02), 0 0 100px rgba(216,180,93,.055);
+      transform: translateY(-50%);
+    }
+
+    .menu-layout {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      width: min(1120px, calc(100% - 64px));
+      grid-template-columns: minmax(340px, 1fr) 260px;
+      align-items: center;
+      gap: 50px;
+      margin: auto;
+      padding: 60px 0;
+    }
+
+    .brand-mark {
+      display: flex;
+      width: 48px;
+      height: 48px;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(240,205,120,.5);
+      border-radius: 50%;
+      color: var(--gold-bright);
+      font-size: 22px;
+    }
+
+    .brand-kicker { display: flex; align-items: center; gap: 14px; }
+    .brand-kicker span:last-child { color: var(--muted); font-size: 11px; letter-spacing: .2em; text-transform: uppercase; }
+    .hero h1 { max-width: 680px; margin: 25px 0 13px; font-size: clamp(58px, 8.5vw, 106px); font-weight: 760; letter-spacing: -.075em; line-height: .96; }
+    .hero h1 span { color: var(--gold-bright); }
+    .hero-copy { max-width: 420px; margin: 0; color: #b6b4a9; font-size: 16px; }
+    .hero-meta { display: flex; align-items: center; gap: 10px; margin-top: 40px; color: var(--muted); font-size: 12px; }
+    .live-dot { width: 7px; height: 7px; border-radius: 50%; background: #a6bc75; box-shadow: 0 0 12px #a6bc75; }
+
+    .menu-actions { display: grid; gap: 12px; }
+    .menu-actions .button { min-height: 60px; justify-content: space-between; padding: 0 21px; font-size: 16px; }
+    .menu-actions .arrow { color: var(--gold); font-size: 19px; font-weight: 400; }
+    .menu-foot { margin-top: 8px; color: #79796f; font-size: 11px; text-align: center; }
+
+    .inner-screen {
+      position: relative;
+      flex-direction: column;
+      overflow: hidden;
+      background:
+        radial-gradient(ellipse at 90% 4%, rgba(127,101,43,.12), transparent 28%),
+        linear-gradient(140deg, #171813, #10110e 62%);
+    }
+
+    .inner-screen::before {
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(255,255,255,.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.012) 1px, transparent 1px);
+      background-size: 44px 44px;
+      content: "";
+      pointer-events: none;
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      min-height: 76px;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 clamp(20px, 5vw, 74px);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      background: rgba(12,13,11,.46);
+    }
+
+    .topbar-brand { display: flex; align-items: center; gap: 10px; color: var(--ink); font-size: 13px; font-weight: 760; letter-spacing: .12em; text-transform: uppercase; }
+    .topbar-brand .mini-mark { color: var(--gold); font-size: 20px; }
+    .topbar-right { display: flex; align-items: center; gap: 15px; }
+    .back-button { padding: 8px 0; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; }
+    .back-button:hover { color: var(--ink); }
+    .page-wrap { position: relative; z-index: 1; width: min(1100px, calc(100% - 48px)); margin: 0 auto; padding: 54px 0 70px; }
+    .page-heading { margin-bottom: 35px; }
+    .page-heading h2 { margin: 7px 0 7px; font-size: clamp(32px, 5vw, 48px); letter-spacing: -.045em; line-height: 1.1; }
+    .page-heading p { margin: 0; color: var(--muted); }
+
+    #server-screen .page-wrap { width: min(1230px, calc(100% - 64px)); padding-top: clamp(44px, 7vh, 78px); }
+    #server-screen .page-heading { margin-bottom: 42px; }
+    #server-screen .page-heading h2 { font-size: clamp(40px, 6vw, 60px); }
+    .server-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; }
+    .server-card {
+      display: flex;
+      min-height: 285px;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: clamp(22px, 3vw, 34px);
+      border: 1px solid rgba(220,189,111,.23);
+      border-radius: 10px;
+      background: linear-gradient(150deg, rgba(37,38,31,.94), rgba(22,23,19,.94));
+      box-shadow: 0 20px 50px rgba(0,0,0,.2);
+      transition: border-color .2s, transform .2s;
+    }
+    .server-card:hover { border-color: rgba(240,205,120,.54); transform: translateY(-4px); }
+    .server-card-top { display: flex; justify-content: space-between; align-items: center; }
+    .server-index { color: #77776d; font-size: 12px; letter-spacing: .15em; }
+    .server-status { display: inline-flex; align-items: center; gap: 7px; color: #a9bd7d; font-size: 11px; }
+    .server-status .live-dot { width: 6px; height: 6px; }
+    .server-count { padding: 4px 7px; border: 1px solid rgba(220,189,111,.18); border-radius: 4px; color: var(--gold-bright); font-size: 11px; font-variant-numeric: tabular-nums; }
+    .server-card h3 { margin: 22px 0 15px; font-size: clamp(23px, 2.6vw, 31px); letter-spacing: -.045em; }
+    .tag-list { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tag { padding: 5px 10px; border: 1px solid rgba(255,255,255,.1); border-radius: 4px; color: #c1beaf; font-size: 11px; }
+    .server-card .button { width: 100%; min-height: 49px; margin-top: 27px; }
+
+    .currency-pill { display: flex; align-items: center; gap: 9px; padding: 9px 14px; border: 1px solid var(--line); border-radius: 6px; background: rgba(216,180,93,.07); font-size: 13px; font-weight: 750; }
+    .coin { display: inline-flex; width: 19px; height: 19px; align-items: center; justify-content: center; border: 1px solid var(--gold); border-radius: 50%; color: var(--gold-bright); font-size: 11px; }
+    .shop-wrap { width: min(1100px, calc(100% - 48px)); margin: 0 auto; }
+    .shop-heading-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 30px; }
+    .shop-heading-row .page-heading { margin: 0; }
+    .shop-tabs { display: flex; gap: 7px; margin-bottom: 33px; border-bottom: 1px solid rgba(255,255,255,.09); }
+    .tab-button { position: relative; padding: 12px 18px 14px; border: 0; background: transparent; color: var(--muted); cursor: pointer; font-size: 13px; font-weight: 650; }
+    .tab-button:hover { color: var(--ink); }
+    .tab-button.active { color: var(--gold-bright); }
+    .tab-button.active::after { position: absolute; right: 16px; bottom: -1px; left: 16px; height: 2px; background: var(--gold); content: ""; }
+    .crate-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+    .crate-card { min-height: 275px; padding: 22px; border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(155deg, rgba(42,40,31,.76), rgba(24,25,21,.94)); }
+    .crate-art { display: grid; height: 116px; place-items: center; border: 1px solid rgba(255,255,255,.055); border-radius: 5px; background: radial-gradient(ellipse, rgba(216,180,93,.14), transparent 67%); font-size: 49px; filter: saturate(.8); }
+    .crate-card:nth-child(2) .crate-art { background: radial-gradient(ellipse, rgba(173,184,179,.13), transparent 67%); }
+    .crate-card:nth-child(3) .crate-art { background: radial-gradient(ellipse, rgba(223,169,63,.18), transparent 67%); }
+    .crate-card:nth-child(4) .crate-art { background: radial-gradient(ellipse, rgba(107,177,200,.17), transparent 67%); }
+    .crate-card h3 { margin: 17px 0 2px; font-size: 16px; }
+    .crate-card .crate-note { color: var(--muted); font-size: 12px; }
+    .crate-buy-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 16px; }
+    .crate-price { display: flex; align-items: center; gap: 6px; color: var(--gold-bright); font-size: 13px; font-weight: 750; }
+    .crate-price .coin { width: 16px; height: 16px; font-size: 9px; }
+    .crate-buy-row .button { min-height: 34px; padding: 0 12px; font-size: 12px; }
+    .empty-state { padding: 48px 25px; border: 1px dashed rgba(220,189,111,.22); border-radius: 8px; color: var(--muted); text-align: center; }
+    .empty-state strong { display: block; margin-bottom: 6px; color: var(--ink); font-size: 16px; }
+    .skin-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; }
+    .skin-card { padding: 20px; border: 1px solid var(--line); border-radius: 7px; background: var(--panel-soft); }
+    .skin-swatch { height: 100px; margin-bottom: 15px; border-radius: 4px; background: linear-gradient(135deg,#49533f,#9a8050); }
+    .skin-card:nth-child(2) .skin-swatch { background: linear-gradient(135deg,#333c42,#919284); }
+    .skin-card:nth-child(3) .skin-swatch { background: linear-gradient(135deg,#5b4b37,#bd9650); }
+    .skin-card h3 { margin: 0 0 3px; font-size: 15px; }
+    .skin-card p { margin: 0 0 14px; color: var(--muted); font-size: 12px; }
+
+    .settings-panel { max-width: 690px; padding: 8px 28px; border: 1px solid var(--line); border-radius: 8px; background: var(--panel-soft); }
+    .setting-row { display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 22px; padding: 23px 0; border-bottom: 1px solid rgba(255,255,255,.07); }
+    .setting-row:last-child { border-bottom: 0; }
+    .setting-label { font-weight: 650; }
+    .setting-label small { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; font-weight: 400; }
+    input[type="range"] { width: 100%; accent-color: var(--gold); cursor: pointer; }
+    .range-value { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12px; }
+    .quality-options { display: flex; justify-content: flex-end; gap: 6px; }
+    .quality-options button { padding: 7px 10px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; }
+    .quality-options button.selected { border-color: var(--line); background: rgba(216,180,93,.1); color: var(--gold-bright); }
+
+    #game-screen { position: fixed; inset: 0; min-height: 0; background: #22271c; }
+    #world-canvas { display: block; width: 100%; height: 100%; }
+    .game-hud { position: absolute; z-index: 2; pointer-events: none; }
+    .hud-top { top: 18px; right: 20px; left: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .hud-card { padding: 12px 15px; border: 1px solid rgba(229,203,144,.2); border-radius: 6px; background: rgba(14,16,13,.83); box-shadow: 0 8px 28px rgba(0,0,0,.16); backdrop-filter: blur(8px); }
+    .hud-server { display: flex; align-items: center; gap: 9px; font-size: 13px; font-weight: 700; }
+    .hud-server .live-dot { width: 6px; height: 6px; }
+    .hud-subtitle { margin-top: 3px; color: #99998c; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; }
+    .hud-bottom { right: 20px; bottom: 18px; left: 20px; display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+    .controls-hint { color: #c8c6b8; font-size: 11px; line-height: 1.9; }
+    kbd { min-width: 21px; padding: 2px 6px; border: 1px solid rgba(239,217,161,.3); border-radius: 3px; background: rgba(20,21,17,.8); color: #f1e4be; font: inherit; text-align: center; }
+    .hotbar { position: absolute; z-index: 2; bottom: 82px; left: 50%; display: flex; gap: 7px; transform: translateX(-50%); pointer-events: auto; }
+    .hotbar-slot { position: relative; display: flex; width: 68px; height: 72px; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 10px 5px 5px; border: 1px solid rgba(220,189,111,.26); border-radius: 6px; background: rgba(14,16,13,.9); color: var(--ink); cursor: pointer; box-shadow: 0 8px 26px rgba(0,0,0,.24); }
+    .hotbar-slot:hover { border-color: rgba(240,205,120,.65); background: rgba(32,32,25,.96); }
+    .hotbar-slot.selected { border-color: var(--gold-bright); box-shadow: 0 0 0 1px rgba(240,205,120,.22), 0 8px 26px rgba(0,0,0,.3); }
+    .hotbar-key { position: absolute; top: 4px; left: 6px; color: var(--gold); font-size: 10px; font-weight: 750; }
+    .hotbar-label { color: #d6d2c5; font-size: 10px; font-weight: 650; }
+    .hotbar-count { position: absolute; right: 5px; bottom: 4px; color: var(--gold-bright); font-size: 9px; font-weight: 750; }
+    .hotbar-icon { position: relative; display: block; width: 25px; height: 30px; }
+    .hotbar-icon.torch::before { position: absolute; bottom: 1px; left: 10px; width: 6px; height: 20px; border: 1px solid #b98f54; border-radius: 2px; background: linear-gradient(90deg,#654b32,#a17a4d); content: ""; transform: rotate(-17deg); }
+    .hotbar-icon.torch::after { position: absolute; top: 0; left: 5px; width: 17px; height: 16px; border-radius: 50% 50% 45% 45%; background: radial-gradient(ellipse at 50% 70%,#fff1b1 0 15%,#efb34f 36%,#be6537 63%,transparent 72%); content: ""; filter: drop-shadow(0 0 5px rgba(238,174,76,.6)); }
+    .hotbar-icon.rock::before { position: absolute; inset: 3px 1px 2px; border: 1px solid #d1d2c6; background: linear-gradient(140deg,#d0d0c4,#777d76 65%,#4b504b); clip-path: polygon(20% 12%,67% 0,100% 34%,82% 86%,37% 100%,0 66%); content: ""; filter: drop-shadow(0 2px 2px rgba(0,0,0,.45)); }
+    .nearby-prompt { min-width: 195px; padding: 11px 15px; border: 1px solid rgba(240,205,120,.4); border-radius: 6px; background: rgba(17,18,14,.91); text-align: center; }
+    .nearby-prompt strong { color: var(--gold-bright); font-size: 12px; }
+    .nearby-prompt span { display: block; margin-top: 2px; color: #c8c6b8; font-size: 11px; }
+    .nearby-prompt progress { width: 100%; height: 4px; margin-top: 7px; accent-color: var(--gold); }
+    .game-exit { pointer-events: auto; min-height: 36px; border-color: rgba(229,203,144,.18); background: rgba(14,16,13,.83); font-size: 11px; }
+    .game-sidebar { position: absolute; z-index: 3; top: 0; right: 0; bottom: 0; display: flex; width: min(330px, 88vw); flex-direction: column; padding: 28px 22px 22px; border-left: 1px solid rgba(220,189,111,.25); background: rgba(18,19,15,.97); box-shadow: -20px 0 60px rgba(0,0,0,.35); }
+    .game-sidebar[hidden] { display: none; }
+    .sidebar-heading { margin: 0 0 20px; color: var(--gold); font-size: 11px; font-weight: 750; letter-spacing: .2em; text-transform: uppercase; }
+    .game-sidebar .button { width: 100%; justify-content: flex-start; }
+    .sidebar-info { display: grid; gap: 15px; margin-top: auto; padding: 20px 0; border-top: 1px solid rgba(255,255,255,.08); }
+    .sidebar-info-label { display: block; margin-bottom: 4px; color: var(--muted); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; }
+    .sidebar-info-value { font-size: 14px; font-weight: 700; }
+    .sidebar-leave { border-color: rgba(210,123,106,.28); color: #e6a093; }
+    .sidebar-leave:hover { border-color: rgba(210,123,106,.65); background: rgba(210,123,106,.1); }
+    .toast { position: absolute; z-index: 6; top: 85px; left: 50%; padding: 9px 15px; border: 1px solid rgba(229,203,144,.25); border-radius: 5px; background: rgba(14,16,13,.92); color: var(--gold-bright); font-size: 12px; opacity: 0; pointer-events: none; transform: translate(-50%, -6px); transition: opacity .2s, transform .2s; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .modal-shade { position: absolute; z-index: 4; inset: 0; display: grid; place-items: center; background: rgba(8,9,7,.62); backdrop-filter: blur(4px); }
+    .modal-shade[hidden] { display: none; }
+    .game-modal-card { width: min(620px, calc(100% - 32px)); max-height: 92vh; overflow: auto; padding: 24px; border: 1px solid var(--line); border-radius: 8px; background: #1b1c17; box-shadow: 0 24px 80px rgba(0,0,0,.4); }
+    .game-modal-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+    .game-modal-header h2 { margin: 4px 0 0; font-size: 28px; letter-spacing: -.04em; }
+    .map-card { width: min(1000px, calc(100% - 32px)); }
+    #map-canvas { display: block; width: 100%; height: min(58vh, 560px); border: 1px solid rgba(220,189,111,.18); border-radius: 5px; background: #293222; }
+    .map-legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 15px; color: var(--muted); font-size: 11px; }
+    .map-legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .map-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #aaa; }
+    .player-dot { background: var(--gold-bright); box-shadow: 0 0 8px var(--gold); }
+    .tree-dot { background: #506d43; }
+    .stone-dot { background: #b7b9ac; }
+    .sulfur-dot { background: #d7bc4c; }
+    .metal-dot { background: #a9aaa5; }
+    .hemp-dot { background: #8ca65b; }
+    .inventory-card { width: min(960px, calc(100% - 32px)); }
+    .inventory-server { color: var(--gold); font-size: 11px; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; }
+    .inventory-content { display: grid; grid-template-columns: minmax(0, 1fr) 285px; gap: 18px; }
+    .inventory-slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+    .inventory-slot { position: relative; display: flex; min-height: 76px; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 7px 5px; border: 1px solid rgba(220,189,111,.18); border-radius: 6px; background: rgba(255,255,255,.025); color: var(--ink); text-align: center; }
+    .inventory-slot.filled { cursor: grab; }
+    .inventory-slot.selected { border-color: var(--gold-bright); background: rgba(216,180,93,.09); }
+    .inventory-slot.filled:active { cursor: grabbing; }
+    .inventory-slot.dragging { opacity: .4; }
+    .inventory-slot.drop-target { border-color: var(--gold-bright); background: rgba(216,180,93,.1); }
+    .inventory-slot.empty { border-style: dashed; background: rgba(0,0,0,.08); }
+    .inventory-slot-number { position: absolute; top: 5px; left: 7px; color: #848275; font-size: 9px; }
+    .inventory-slot-name { color: #d9d5c8; font-size: 10px; }
+    .inventory-slot-count { position: absolute; right: 7px; bottom: 5px; color: var(--gold-bright); font-size: 10px; font-weight: 750; }
+    .item-model { position: relative; display: block; width: 30px; height: 30px; filter: drop-shadow(0 3px 3px rgba(0,0,0,.35)); }
+    .item-model.wood { border: 1px solid #d0a16a; border-radius: 5px 8px 5px 8px; background: repeating-linear-gradient(0deg,#704727 0 5px,#a97139 6px 10px,#c18b50 11px 13px); transform: rotate(-8deg); }
+    .item-model.stone,.item-model.rock { border: 1px solid #d0d1c7; background: linear-gradient(140deg,#d4d4c8,#858b83 62%,#575d57); clip-path: polygon(18% 12%,65% 0,100% 34%,82% 86%,37% 100%,0 66%); }
+    .item-model.sulfur { border: 1px solid #e6d57a; background: linear-gradient(135deg,#fff1a1 0 15%,#d0ad35 25% 52%,#79652b 72%); clip-path: polygon(18% 12%,65% 0,100% 34%,82% 86%,37% 100%,0 66%); }
+    .item-model.metal { border: 1px solid #d0d3d4; background: linear-gradient(145deg,#f0f0eb 0 14%,#a7afb0 26% 43%,#626c71 55% 72%,#c6c9c4 78%); clip-path: polygon(10% 24%,64% 0,94% 28%,82% 83%,38% 100%,0 70%); }
+    .item-model.cloth { border: 1px solid #e1d2b4; border-radius: 4px; background: repeating-linear-gradient(45deg,#c8b994 0 4px,#938365 5px 7px); }
+    .item-model.meat { border: 1px solid #e0a18a; border-radius: 55% 45% 50% 40%; background: radial-gradient(ellipse at 35% 35%,#e0a18a,#a6463f 68%,#713431); transform: rotate(-25deg); }
+    .item-model.bones { background: radial-gradient(circle at 18% 25%,#eee7d2 0 17%,transparent 19%),radial-gradient(circle at 82% 75%,#eee7d2 0 17%,transparent 19%),linear-gradient(45deg,transparent 39%,#cfc7b3 42% 58%,transparent 61%); }
+    .item-model.fur { border: 1px solid #c09b72; border-radius: 45% 55% 42% 58%; background: repeating-radial-gradient(ellipse at 40% 40%,#ae8963 0 3px,#70563f 4px 6px); }
+    .item-model.torch { width: 24px; }
+    .item-model.torch::before { position: absolute; bottom: 1px; left: 9px; width: 6px; height: 22px; border: 1px solid #b98f54; border-radius: 2px; background: linear-gradient(90deg,#654b32,#a17a4d); content: ""; transform: rotate(-17deg); }
+    .item-model.torch::after { position: absolute; top: 0; left: 4px; width: 17px; height: 16px; border-radius: 50%; background: radial-gradient(ellipse at 50% 70%,#fff1b1 0 15%,#efb34f 36%,#be6537 63%,transparent 72%); content: ""; }
+    .item-model.stone-hatchet::before,.item-model.stone-pickaxe::before,.item-model.metal-hatchet::before,.item-model.metal-pickaxe::before,.item-model.hammer::before { position: absolute; top: 5px; left: 13px; width: 4px; height: 23px; border-radius: 2px; background: #815d3c; content: ""; transform: rotate(25deg); }
+    .item-model.stone-hatchet::after { position: absolute; top: 2px; left: 3px; width: 21px; height: 10px; border: 1px solid #c5c6ba; border-radius: 7px 2px; background: linear-gradient(#dddcd0,#777d78); content: ""; transform: rotate(-24deg); }
+    .item-model.stone-pickaxe::after { position: absolute; top: 3px; left: 2px; width: 26px; height: 6px; border: 1px solid #c5c6ba; border-radius: 50%; background: linear-gradient(#dddcd0,#777d78); content: ""; transform: rotate(-18deg); }
+    .item-model.metal-hatchet::after { position: absolute; top: 2px; left: 3px; width: 21px; height: 10px; border: 1px solid #d5d9d9; border-radius: 7px 2px; background: linear-gradient(#f0f0eb,#69757a); content: ""; transform: rotate(-24deg); }
+    .item-model.metal-pickaxe::after { position: absolute; top: 3px; left: 2px; width: 26px; height: 6px; border: 1px solid #cfd2d2; border-radius: 50%; background: linear-gradient(#e0e3e1,#7b8589); content: ""; transform: rotate(-18deg); }
+    .item-model.furnace,.item-model.chest,.item-model.cupboard,.item-model.workbench { border: 1px solid #c79c63; border-radius: 4px; background: repeating-linear-gradient(0deg,#563e2b 0 5px,#9a7046 6px 9px); }
+    .item-model.furnace { border-color: #9da2a0; border-radius: 50% 50% 4px 4px; background: radial-gradient(ellipse at 50% 75%,#e8a64e 0 16%,#683d29 20% 44%,#555b59 48%); }
+    .item-model.map-item { border: 1px solid #d0c293; border-radius: 3px; background: linear-gradient(135deg,#d4c99d,#87906e); transform: rotate(-8deg); }
+    .item-model.key-lock,.item-model.code-lock { border: 3px solid #aeb4b1; border-radius: 5px; background: linear-gradient(#d3d4ca,#69716d); }
+    .item-model.sleeping-bag { border: 1px solid #d2b691; border-radius: 8px; background: repeating-linear-gradient(90deg,#7c654c 0 7px,#b49469 8px 13px); }
+    .item-model.camp-fire { background: radial-gradient(ellipse at 50% 75%,#ffcc64 0 12%,#d96832 18% 33%,transparent 36%); }
+    .item-model.wood-door { border: 2px solid #c49a66; border-radius: 2px; background: repeating-linear-gradient(90deg,#67472f 0 6px,#ad8050 7px 10px); }
+    .item-model.metal-door { border: 2px solid #bec3c3; border-radius: 2px; background: repeating-linear-gradient(90deg,#596267 0 6px,#aeb3b1 7px 10px); }
+    .item-model.fishing-rod { width: 5px; height: 32px; border-radius: 3px; background: linear-gradient(90deg,#543c2b,#bc8c55); transform: rotate(25deg); }
+    .item-model.hide-vest,.item-model.hide-pants,.item-model.hide-boots { border: 1px solid #c09b72; border-radius: 5px; background: repeating-linear-gradient(45deg,#ae8963 0 4px,#70563f 5px 7px); }
+    .item-model.wood-chestplate,.item-model.wood-pants { border: 1px solid #d0a16a; border-radius: 4px; background: repeating-linear-gradient(0deg,#704727 0 5px,#a97139 6px 10px); }
+    .item-model.wood-shield { border: 2px solid #c79c63; border-radius: 45% 45% 55% 55%; background: repeating-linear-gradient(90deg,#704727 0 5px,#a97139 6px 10px); clip-path: polygon(0 0,100% 0,92% 70%,50% 100%,8% 70%); }
+    .craft-categories { display: flex; flex-wrap: wrap; gap: 5px; margin: 0 0 12px; }
+    .craft-category { padding: 6px 8px; border: 1px solid rgba(220,189,111,.16); border-radius: 4px; background: transparent; color: var(--muted); cursor: pointer; font-size: 9px; }
+    .craft-category.selected { border-color: var(--line); background: rgba(216,180,93,.1); color: var(--gold-bright); }
+    .resource-list { display: grid; gap: 7px; }
+    .resource-entry { display: flex; align-items: center; gap: 9px; padding: 8px; border: 1px solid rgba(220,189,111,.12); border-radius: 5px; color: #d9d5c8; font-size: 11px; }
+    .resource-entry .item-model { width: 22px; height: 22px; flex: 0 0 22px; }
+    .craft-panel { max-height: 72vh; overflow-y: auto; padding: 15px; border: 1px solid rgba(220,189,111,.16); border-radius: 6px; background: rgba(0,0,0,.13); }
+    .inventory-main { min-width: 0; }
+    .craft-heading { margin: 0 0 12px; font-size: 15px; }
+    .craft-recipe { padding: 12px 0; border-top: 1px solid rgba(255,255,255,.07); }
+    .craft-recipe-top { display: flex; align-items: center; gap: 9px; }
+    .craft-recipe-name { flex: 1; font-size: 12px; font-weight: 700; }
+    .craft-cost { margin: 7px 0 9px; color: var(--muted); font-size: 10px; line-height: 1.6; }
+    .craft-recipe .button { width: 100%; min-height: 32px; font-size: 11px; }
+    .craft-recipe .button:disabled { border-color: rgba(255,255,255,.06); background: rgba(255,255,255,.025); color: #77776d; cursor: not-allowed; transform: none; }
+    .inventory-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 7px; margin-top: 12px; padding: 10px; border: 1px solid rgba(220,189,111,.14); border-radius: 5px; background: rgba(0,0,0,.12); }
+    .inventory-actions-label { flex: 1 1 100%; color: var(--muted); font-size: 11px; }
+    .inventory-actions .button { min-height: 30px; padding: 0 10px; font-size: 10px; }
+    .inventory-actions .button:disabled { opacity: .4; cursor: not-allowed; }
+    .inventory-hotbar { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+    .inventory-hotbar-slot { display: flex; min-height: 60px; flex-direction: column; align-items: center; justify-content: center; gap: 3px; padding: 5px 2px; border: 1px solid rgba(220,189,111,.22); border-radius: 5px; background: rgba(0,0,0,.15); color: var(--muted); font-size: 9px; text-align: center; }
+    .inventory-hotbar-slot.drop-target { border-color: var(--gold-bright); background: rgba(216,180,93,.12); }
+    .character-panel { display: grid; grid-template-columns: 100px 1fr; gap: 14px; align-items: center; margin-bottom: 15px; padding: 12px; border: 1px solid rgba(220,189,111,.15); border-radius: 6px; background: rgba(0,0,0,.1); }
+    .character-preview { display: grid; justify-items: center; gap: 5px; color: var(--muted); font-size: 10px; }
+    .inventory-avatar { position: relative; width: 48px; height: 72px; }
+    .inventory-avatar-head { position: absolute; z-index: 2; top: 1px; left: 15px; width: 19px; height: 19px; border: 2px solid #3c3328; border-radius: 50%; background: #d9b98b; }
+    .inventory-avatar-body { position: absolute; top: 18px; left: 10px; width: 29px; height: 34px; border: 2px solid #384332; border-radius: 10px 10px 7px 7px; background: #596b4b; }
+    .inventory-avatar-legs { position: absolute; top: 48px; left: 13px; width: 24px; height: 21px; border-left: 8px solid #34392d; border-right: 8px solid #34392d; }
+    .armor-slots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
+    .armor-slot { display: grid; min-height: 54px; place-content: center; gap: 3px; border: 1px dashed rgba(220,189,111,.24); border-radius: 5px; color: #aaa796; font-size: 9px; text-align: center; }
+    .armor-slot b { color: var(--gold); font-size: 10px; }
+    .game-settings-card { width: min(680px, calc(100% - 32px)); }
+    .game-settings-card .settings-panel { max-width: none; }
+
+    @media (max-width: 1100px) {
+      .server-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 850px) {
+      .menu-layout { grid-template-columns: 1fr; gap: 37px; width: min(560px, calc(100% - 44px)); }
+      .hero h1 { font-size: clamp(58px, 13vw, 90px); }
+      #main-menu::after { right: -210px; opacity: .5; }
+      .menu-actions { grid-template-columns: 1fr 1fr; }
+      .menu-actions .button:first-child { grid-column: span 2; }
+      .server-grid { grid-template-columns: 1fr; }
+      .server-card { min-height: 240px; }
+      .crate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .page-wrap, .shop-wrap { width: min(680px, calc(100% - 36px)); }
+      #server-screen .page-wrap { width: min(680px, calc(100% - 36px)); }
+      .server-card h3 { margin-top: 13px; }
+      .server-card .button { margin-top: 18px; }
+    }
+
+    @media (max-width: 520px) {
+      .topbar { min-height: 64px; padding: 0 17px; }
+      .topbar-brand { font-size: 11px; }
+      .topbar-right { gap: 10px; }
+      .page-wrap, .shop-wrap { padding-top: 37px; }
+      .shop-heading-row { align-items: flex-start; flex-direction: column; }
+      .shop-tabs { overflow-x: auto; gap: 0; }
+      .tab-button { flex: 0 0 auto; padding-right: 12px; padding-left: 12px; font-size: 12px; }
+      .crate-grid { gap: 10px; }
+      .crate-card { padding: 13px; }
+      .crate-art { height: 90px; font-size: 39px; }
+      .crate-buy-row { align-items: flex-start; flex-direction: column; }
+      .crate-buy-row .button { width: 100%; }
+      .skin-grid { grid-template-columns: 1fr; }
+      .setting-row { grid-template-columns: 1fr; gap: 12px; }
+      .quality-options { justify-content: flex-start; }
+      .hud-top { top: 10px; right: 10px; left: 10px; }
+      .hud-card { padding: 9px; }
+      .hud-bottom { right: 10px; bottom: 10px; left: 10px; }
+      .controls-hint { font-size: 10px; }
+      .nearby-prompt { min-width: 150px; padding: 8px; }
+      .game-exit { padding: 0 9px; }
+      .hotbar { bottom: 77px; gap: 4px; }
+      .hotbar-slot { width: 54px; height: 66px; }
+      .game-modal-card { padding: 17px; }
+      .game-modal-header h2 { font-size: 23px; }
+      #map-canvas { height: 50vh; }
+      .inventory-content { grid-template-columns: 1fr; }
+      .inventory-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .inventory-slot { min-height: 68px; }
+      .craft-panel { padding: 12px; }
+      .character-panel { grid-template-columns: 76px 1fr; gap: 8px; padding: 8px; }
+      .armor-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section id="main-menu" class="screen active" aria-label="Main menu">
+      <div class="menu-layout">
+        <div class="hero">
+          <div class="brand-kicker">
+            <div class="brand-mark" aria-hidden="true">✳</div>
+            <span>Wilderness awaits</span>
+          </div>
+          <h1>Spud-<br><span>Survival</span></h1>
+          <p class="hero-copy">Gather what you need. Make this wild place your own. The first night is closer than you think.</p>
+          <div class="hero-meta"><span class="live-dot"></span><span>Version Beta 0.1</span></div>
+        </div>
+        <nav class="menu-actions" aria-label="Main menu">
+          <button class="button primary" data-screen="server-screen"><span>Play</span><span class="arrow">↗</span></button>
+          <button class="button" data-screen="shop-screen"><span>Shop</span><span class="arrow">↗</span></button>
+          <button class="button" data-screen="settings-screen"><span>Settings</span><span class="arrow">↗</span></button>
+        </nav>
+      </div>
+    </section>
+
+    <section id="server-screen" class="screen inner-screen" aria-label="Server selection">
+      <header class="topbar">
+        <div class="topbar-brand"><span class="mini-mark">✳</span> Spud-Survival</div>
+        <button class="back-button" data-screen="main-menu">← &nbsp; Back to menu</button>
+      </header>
+      <div class="page-wrap">
+        <div class="page-heading">
+          <div class="eyebrow">Choose your world</div>
+          <h2>Find your frontier.</h2>
+          <p>Every server has a story. Pick one and start yours.</p>
+        </div>
+        <div class="server-grid">
+          <article class="server-card">
+            <div>
+              <div class="server-card-top"><span class="server-index">WORLD 01</span><span class="server-status"><i class="live-dot"></i> Online</span><span class="server-count" data-server-count="Survival#1">0/50</span></div>
+              <h3>Survival#1</h3>
+              <div class="tag-list"><span class="tag">Survival</span><span class="tag">Kits</span></div>
+            </div>
+            <button class="button primary" data-join="Survival#1">Join world <span>→</span></button>
+          </article>
+          <article class="server-card">
+            <div>
+              <div class="server-card-top"><span class="server-index">WORLD 02</span><span class="server-status"><i class="live-dot"></i> Online</span><span class="server-count" data-server-count="Survival#2">0/50</span></div>
+              <h3>Survival#2</h3>
+              <div class="tag-list"><span class="tag">Survival</span></div>
+            </div>
+            <button class="button primary" data-join="Survival#2">Join world <span>→</span></button>
+          </article>
+          <article class="server-card">
+            <div>
+              <div class="server-card-top"><span class="server-index">WORLD 03</span><span class="server-status"><i class="live-dot"></i> Online</span><span class="server-count" data-server-count="Survival#3">0/50</span></div>
+              <h3>Survival#3</h3>
+              <div class="tag-list"><span class="tag">Modded</span><span class="tag">Kits</span></div>
+            </div>
+            <button class="button primary" data-join="Survival#3">Join world <span>→</span></button>
+          </article>
+          <article class="server-card">
+            <div>
+              <div class="server-card-top"><span class="server-index">WORLD 04</span><span class="server-status"><i class="live-dot"></i> Online</span><span class="server-count" data-server-count="build#4">0/50</span></div>
+              <h3>build#4</h3>
+              <div class="tag-list"><span class="tag">Build</span><span class="tag">Infinite Resources</span></div>
+            </div>
+            <button class="button primary" data-join="build#4">Join world <span>→</span></button>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="shop-screen" class="screen inner-screen" aria-label="Shop">
+      <header class="topbar">
+        <div class="topbar-brand"><span class="mini-mark">✳</span> Spud-Survival</div>
+        <div class="topbar-right">
+          <div class="currency-pill"><span class="coin">S</span><span><span id="spuds-balance">500</span> Spuds</span></div>
+          <button class="back-button" data-screen="main-menu">← &nbsp; Back</button>
+        </div>
+      </header>
+      <div class="shop-wrap" style="padding-top:42px;padding-bottom:60px">
+        <div class="shop-heading-row">
+          <div class="page-heading"><div class="eyebrow">The trading post</div><h2>Make it yours.</h2><p>Little treasures for the road ahead.</p></div>
+        </div>
+        <nav class="shop-tabs" aria-label="Shop sections">
+          <button class="tab-button active" data-tab="crates">Crates</button>
+          <button class="tab-button" data-tab="skin">Skin</button>
+          <button class="tab-button" data-tab="inventory">Inventory</button>
+          <button class="tab-button" data-tab="my-crates">My Crates</button>
+        </nav>
+        <div id="shop-content"></div>
+      </div>
+    </section>
+
+    <section id="settings-screen" class="screen inner-screen" aria-label="Settings">
+      <header class="topbar">
+        <div class="topbar-brand"><span class="mini-mark">✳</span> Spud-Survival</div>
+        <button class="back-button" data-screen="main-menu">← &nbsp; Back to menu</button>
+      </header>
+      <div class="page-wrap">
+        <div class="page-heading"><div class="eyebrow">Make yourself at home</div><h2>Settings.</h2><p>Your game, your pace.</p></div>
+        <div class="settings-panel">
+          <div class="setting-row">
+            <div class="setting-label">Sensitivity<small>Movement responsiveness</small></div>
+            <div><input id="sensitivity" data-setting-range="sensitivity" type="range" min="50" max="150" value="100" aria-label="Sensitivity"><div class="range-value"><span>Slow</span><span id="sensitivity-value" data-setting-value="sensitivity">100%</span><span>Fast</span></div></div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Graphics quality<small>Visual detail in the world</small></div>
+            <div class="quality-options" role="group" aria-label="Graphics quality">
+              <button data-quality="low">Low</button><button data-quality="medium">Medium</button><button data-quality="high" class="selected">High</button>
+            </div>
+          </div>
+          <div class="setting-row">
+            <div class="setting-label">Volume<small>Gathering and world sounds</small></div>
+            <div><input id="volume" data-setting-range="volume" type="range" min="0" max="100" value="45" aria-label="Volume"><div class="range-value"><span>Quiet</span><span id="volume-value" data-setting-value="volume">45%</span><span>Loud</span></div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="game-screen" class="screen" aria-label="Game world">
+      <canvas id="world-canvas" aria-label="Top-down survival game world"></canvas>
+      <div class="game-hud hud-top">
+        <div class="hud-card"><div class="hud-server"><i class="live-dot"></i><span id="current-server">Survival#1</span></div><div class="hud-subtitle">The quiet woods · <span id="world-time">Day</span></div></div>
+      </div>
+      <div id="toast" class="toast" role="status"></div>
+      <div class="game-hud hud-bottom">
+        <div class="hud-card controls-hint"><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> move<br><kbd>1–5</kbd> select · <kbd>M</kbd> map · <kbd>T</kbd> inventory · <kbd>Tab</kbd> menu</div>
+        <div id="nearby-prompt" class="nearby-prompt" hidden><strong>Resource nearby</strong><span>Left click to gather</span></div>
+        <button id="leave-game" class="button game-exit">Leave world</button>
+      </div>
+      <div id="hotbar" class="hotbar" role="toolbar" aria-label="Hotbar"></div>
+      <aside id="game-sidebar" class="game-sidebar" aria-label="In-game menu" hidden>
+        <div class="sidebar-heading">World menu</div>
+        <button id="sidebar-settings" class="button">Settings</button>
+        <div class="sidebar-info">
+          <div><span class="sidebar-info-label">Players online</span><span id="sidebar-player-count" class="sidebar-info-value gold">0/50</span></div>
+          <div><span class="sidebar-info-label">Current server</span><span id="sidebar-server" class="sidebar-info-value">Survival#1</span></div>
+        </div>
+        <button id="sidebar-leave" class="button sidebar-leave">Leave server</button>
+      </aside>
+      <div id="map-overlay" class="modal-shade" hidden>
+        <section class="game-modal-card map-card" role="dialog" aria-modal="true" aria-labelledby="map-title">
+          <header class="game-modal-header"><div><div class="eyebrow">Explore the wilderness</div><h2 id="map-title">World map</h2></div><button class="button small" data-close-overlay="map-overlay">Close <kbd>M</kbd></button></header>
+          <canvas id="map-canvas" aria-label="Full map showing resources and your location"></canvas>
+          <div class="map-legend"><span><i class="map-dot player-dot"></i>You</span><span><i class="map-dot tree-dot"></i>Trees</span><span><i class="map-dot stone-dot"></i>Stone</span><span><i class="map-dot sulfur-dot"></i>Sulfur</span><span><i class="map-dot metal-dot"></i>Metal</span><span><i class="map-dot hemp-dot"></i>Hemp</span></div>
+        </section>
+      </div>
+      <div id="inventory-overlay" class="modal-shade" hidden>
+        <section class="game-modal-card inventory-card" role="dialog" aria-modal="true" aria-labelledby="inventory-title">
+          <header class="game-modal-header"><div><div class="eyebrow" id="inventory-server">Survival#1</div><h2 id="inventory-title">Inventory</h2></div><button class="button small" data-close-overlay="inventory-overlay">Close <kbd>T</kbd></button></header>
+          <div id="inventory-content"></div>
+        </section>
+      </div>
+      <div id="game-settings-overlay" class="modal-shade" hidden>
+        <section class="game-modal-card game-settings-card" role="dialog" aria-modal="true" aria-labelledby="game-settings-title">
+          <header class="game-modal-header"><div><div class="eyebrow">Make yourself at home</div><h2 id="game-settings-title">Settings</h2></div><button class="button small" data-close-overlay="game-settings-overlay">Done</button></header>
+          <div class="settings-panel">
+            <div class="setting-row">
+              <div class="setting-label">Sensitivity<small>Movement responsiveness</small></div>
+              <div><input data-setting-range="sensitivity" type="range" min="50" max="150" value="100" aria-label="Sensitivity"><div class="range-value"><span>Slow</span><span data-setting-value="sensitivity">100%</span><span>Fast</span></div></div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Graphics quality<small>Visual detail in the world</small></div>
+              <div class="quality-options" role="group" aria-label="Graphics quality">
+                <button data-quality="low">Low</button><button data-quality="medium">Medium</button><button data-quality="high" class="selected">High</button>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-label">Volume<small>Gathering and world sounds</small></div>
+              <div><input data-setting-range="volume" type="range" min="0" max="100" value="45" aria-label="Volume"><div class="range-value"><span>Quiet</span><span data-setting-value="volume">45%</span><span>Loud</span></div></div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+      const screens = $$(".screen");
+      const resourceTypes = [
+        { key: "wood", name: "Wood", label: "Wood", color: "#b88a52", amount: 5, max: 3 },
+        { key: "stone", name: "Stone", label: "Stone", color: "#a7aaa0", amount: 4, max: 3 },
+        { key: "sulfur", name: "Sulfur", label: "Sulfur", color: "#d5b94c", amount: 3, max: 2 },
+        { key: "metal", name: "Metal Fragments", label: "Metal", color: "#b7aaa0", amount: 3, max: 2 },
+        { key: "cloth", name: "Cloth", label: "Cloth", color: "#d6c6a9", amount: 2, max: 3 },
+        { key: "meat", name: "Raw Meat", label: "Meat", color: "#bd715c" },
+        { key: "bones", name: "Bones", label: "Bones", color: "#d8d0b9" },
+        { key: "fur", name: "Animal Fur", label: "Fur", color: "#9b7958" }
+      ];
+      const crateTypes = [
+        { name: "Bronze Crate", price: 100, icon: "▣", detail: "A few useful finds" },
+        { name: "Iron Crate", price: 250, icon: "▤", detail: "Something sturdier" },
+        { name: "Gold Crate", price: 500, icon: "▣", detail: "A little extra shine" },
+        { name: "Diamond Crate", price: 1000, icon: "◇", detail: "The rarest treasures" }
+      ];
+      const serverCapacity = 50;
+      const serverNames = ["Survival#1", "Survival#2", "Survival#3", "build#4"];
+      const craftingCategories = ["Common", "Construction", "Items", "Resources", "Clothing", "Tools", "Weapons", "Attachments", "Ammo", "Electrical", "All"];
+      const craftingRecipes = [
+        { id: "torch", name: "Torch", icon: "torch", category: "Common", costs: { wood: 2, cloth: 1 } },
+        { id: "stone-hatchet", name: "Stone Hatchet", icon: "stone-hatchet", category: "Tools", costs: { wood: 8, stone: 5 } },
+        { id: "stone-pickaxe", name: "Stone Pickaxe", icon: "stone-pickaxe", category: "Tools", costs: { wood: 8, stone: 8 } },
+        { id: "metal-hatchet", name: "Metal Hatchet", icon: "metal-hatchet", category: "Tools", costs: { wood: 20, metal: 15 } },
+        { id: "metal-pickaxe", name: "Metal Pickaxe", icon: "metal-pickaxe", category: "Tools", costs: { wood: 20, metal: 20 } },
+        { id: "furnace", name: "Furnace", icon: "furnace", category: "Construction", costs: { stone: 50, wood: 20 } },
+        { id: "chest", name: "Chest", icon: "chest", category: "Construction", costs: { wood: 25 } },
+        { id: "tool-cupboard", name: "Tool Cupboard", icon: "cupboard", category: "Construction", costs: { wood: 100 } },
+        { id: "map", name: "Map", icon: "map-item", category: "Items", costs: { wood: 2, cloth: 3 } },
+        { id: "hammer", name: "Hammer", icon: "hammer", category: "Tools", costs: { wood: 10, stone: 5 } },
+        { id: "workbench-1", name: "Workbench 1", icon: "workbench", category: "Construction", costs: { wood: 50, stone: 20, metal: 10 } },
+        { id: "key-lock", name: "Key Lock", icon: "key-lock", category: "Items", costs: { metal: 15 } },
+        { id: "code-lock", name: "Code Lock", icon: "code-lock", category: "Items", costs: { metal: 30 } },
+        { id: "sleeping-bag", name: "Sleeping Bag", icon: "sleeping-bag", category: "Construction", costs: { cloth: 20, fur: 5 } },
+        { id: "camp-fire", name: "Camp Fire", icon: "camp-fire", category: "Construction", costs: { wood: 10, stone: 5 } },
+        { id: "wooden-door", name: "Wooden Door", icon: "wood-door", category: "Construction", costs: { wood: 30 } },
+        { id: "wooden-double-door", name: "Wooden Double Door", icon: "wood-door", category: "Construction", costs: { wood: 60 } },
+        { id: "sheet-metal-door", name: "Sheet Metal Door", icon: "metal-door", category: "Construction", costs: { metal: 100, wood: 10 } },
+        { id: "sheet-metal-double-door", name: "Sheet Metal Double Door", icon: "metal-door", category: "Construction", costs: { metal: 200, wood: 20 } },
+        { id: "fishing-rod", name: "Handmade Fishing Rod", icon: "fishing-rod", category: "Items", costs: { wood: 20, cloth: 5 } },
+        { id: "hide-vest", name: "Hide Vest", icon: "hide-vest", category: "Clothing", armorSlot: "Chest", costs: { fur: 12, cloth: 6 } },
+        { id: "hide-pants", name: "Hide Pants", icon: "hide-pants", category: "Clothing", armorSlot: "Legs", costs: { fur: 10, cloth: 5 } },
+        { id: "hide-boots", name: "Hide Boots", icon: "hide-boots", category: "Clothing", armorSlot: "Feet", costs: { fur: 6, cloth: 3 } },
+        { id: "wood-chestplate", name: "Wood Chestplate", icon: "wood-chestplate", category: "Clothing", armorSlot: "Chest", costs: { wood: 40, cloth: 6 } },
+        { id: "wood-armor-pants", name: "Wood Armor Pants", icon: "wood-pants", category: "Clothing", armorSlot: "Legs", costs: { wood: 30, cloth: 4 } },
+        { id: "wooden-shield", name: "Wooden Shield", icon: "wood-shield", category: "Weapons", costs: { wood: 35, cloth: 4 } }
+      ];
+      const itemNames = [...new Set(["Torch", "Stone", ...craftingRecipes.map(recipe => recipe.name)])];
+      function createServerInventory(server) {
+        return {
+          resources: Object.fromEntries(resourceTypes.map(resource => [resource.key, 0])),
+          items: Object.fromEntries(itemNames.map(name => [name, 0])),
+          slots: Array(24).fill(null),
+          hotbar: ["item:Torch", "item:Stone", null, null, null],
+          armor: { Head: null, Chest: null, Legs: null, Feet: null },
+          drops: [],
+          infiniteResources: server === "build#4",
+          initialized: false
+        };
+      }
+      const state = {
+        spuds: 500,
+        inventoriesByServer: Object.fromEntries(serverNames.map(server => [server, createServerInventory(server)])),
+        crates: [],
+        selectedSkin: "Field Worn",
+        activeTab: "crates",
+        sensitivity: 1,
+        volume: .45,
+        quality: "high",
+        server: "Survival#1",
+        joinedServer: null,
+        serverPlayers: Object.fromEntries(serverNames.map(server => [server, 0])),
+        worldTime: 0,
+        selectedHotbar: 0,
+        selectedInventorySlot: null,
+        craftCategory: "All"
+      };
+      const maxStackSize = 99;
+
+      function currentInventory() {
+        return state.inventoriesByServer[state.server];
+      }
+
+      function formatAmount(amount) {
+        return amount === Infinity ? "∞" : amount;
+      }
+
+      function stackAmount(inventory, type, key) {
+        return inventory.slots.reduce((total, slot) =>
+          total + (slot && slot.type === type && slot.key === key ? slot.amount : 0), 0);
+      }
+
+      function canAddStack(inventory, type, key, amount) {
+        const capacity = inventory.slots.reduce((total, slot) => {
+          if (!slot) return total + maxStackSize;
+          if (slot.type === type && slot.key === key) return total + maxStackSize - slot.amount;
+          return total;
+        }, 0);
+        return capacity >= amount;
+      }
+
+      function addStack(inventory, type, key, amount) {
+        if (type === "resource" && inventory.infiniteResources) {
+          inventory.resources[key] = Infinity;
+          const existing = inventory.slots.find(slot => slot?.type === type && slot.key === key);
+          if (existing) {
+            existing.amount = Infinity;
+          } else {
+            const emptyIndex = inventory.slots.indexOf(null);
+            if (emptyIndex >= 0) inventory.slots[emptyIndex] = { type, key, amount: Infinity };
+          }
+          return Infinity;
+        }
+        let remaining = amount;
+        for (const slot of inventory.slots) {
+          if (!slot || slot.type !== type || slot.key !== key || slot.amount >= maxStackSize) continue;
+          const added = Math.min(remaining, maxStackSize - slot.amount);
+          slot.amount += added;
+          remaining -= added;
+          if (!remaining) break;
+        }
+        while (remaining > 0) {
+          const emptyIndex = inventory.slots.indexOf(null);
+          if (emptyIndex < 0) break;
+          const added = Math.min(remaining, maxStackSize);
+          inventory.slots[emptyIndex] = { type, key, amount: added };
+          remaining -= added;
+        }
+        const added = amount - remaining;
+        const totals = type === "resource" ? inventory.resources : inventory.items;
+        totals[key] = (totals[key] || 0) + added;
+        return added;
+      }
+
+      function removeStackAmount(inventory, slotIndex, amount) {
+        const slot = inventory.slots[slotIndex];
+        if (!slot) return 0;
+        if (slot.type === "resource" && inventory.infiniteResources) return 0;
+        const removed = Math.min(amount, slot.amount);
+        slot.amount -= removed;
+        const totals = slot.type === "resource" ? inventory.resources : inventory.items;
+        totals[slot.key] = Math.max(0, totals[slot.key] - removed);
+        if (!slot.amount) inventory.slots[slotIndex] = null;
+        const hotbarKey = `${slot.type}:${slot.key}`;
+        if (!stackAmount(inventory, slot.type, slot.key)) {
+          inventory.hotbar = inventory.hotbar.map(key => key === hotbarKey ? null : key);
+        }
+        return removed;
+      }
+
+      function consumeResource(inventory, key, amount) {
+        if (inventory.infiniteResources) return true;
+        if (inventory.resources[key] < amount) return false;
+        let remaining = amount;
+        for (let index = 0; index < inventory.slots.length && remaining > 0; index++) {
+          const slot = inventory.slots[index];
+          if (!slot || slot.type !== "resource" || slot.key !== key) continue;
+          remaining -= removeStackAmount(inventory, index, remaining);
+        }
+        return remaining === 0;
+      }
+
+      function stackModel(type, key) {
+        if (type === "resource") return key;
+        if (key === "Stone") return "stone";
+        return craftingRecipes.find(recipe => recipe.name === key)?.icon || "chest";
+      }
+
+      function stackName(type, key) {
+        if (type === "resource") return resourceTypes.find(resource => resource.key === key)?.name || key;
+        return key;
+      }
+
+      function stackForHotbar(inventory, key) {
+        if (!key) return null;
+        const separator = key.indexOf(":");
+        const type = key.slice(0, separator);
+        const itemKey = key.slice(separator + 1);
+        const totals = type === "resource" ? inventory.resources : inventory.items;
+        if (!totals || !totals[itemKey]) return null;
+        return { type, key: itemKey, name: stackName(type, itemKey), icon: stackModel(type, itemKey), amount: totals[itemKey] };
+      }
+
+      function showScreen(id) {
+        screens.forEach(screen => screen.classList.toggle("active", screen.id === id));
+        if (id === "game-screen") resizeCanvas();
+      }
+
+      $$("[data-screen]").forEach(button => button.addEventListener("click", () => showScreen(button.dataset.screen)));
+
+      function updateSpuds() {
+        $("#spuds-balance").textContent = state.spuds.toLocaleString();
+      }
+
+      function updateServerCounts() {
+        $$("[data-server-count]").forEach(count => {
+          count.textContent = `${state.serverPlayers[count.dataset.serverCount]}/${serverCapacity}`;
+        });
+        const players = state.serverPlayers[state.server] || 0;
+        $("#sidebar-player-count").textContent = `${players}/${serverCapacity}`;
+        $("#sidebar-server").textContent = state.server;
+      }
+
+      function drawShop() {
+        const content = $("#shop-content");
+        content.replaceChildren();
+        $$(".tab-button").forEach(button => button.classList.toggle("active", button.dataset.tab === state.activeTab));
+
+        if (state.activeTab === "crates") {
+          const grid = document.createElement("div");
+          grid.className = "crate-grid";
+          crateTypes.forEach((crate, index) => {
+            const card = document.createElement("article");
+            card.className = "crate-card";
+            card.innerHTML = `<div class="crate-art" aria-hidden="true">${crate.icon}</div>
+              <h3>${crate.name}</h3><div class="crate-note">${crate.detail}</div>
+              <div class="crate-buy-row"><span class="crate-price"><span class="coin">S</span>${crate.price}</span>
+              <button class="button small primary" data-buy="${index}">Buy</button></div>`;
+            grid.append(card);
+          });
+          content.append(grid);
+          $$("[data-buy]", content).forEach(button => button.addEventListener("click", () => {
+            const crate = crateTypes[Number(button.dataset.buy)];
+            if (state.spuds < crate.price) {
+              showToast("Not enough Spuds for that one.");
+              return;
+            }
+            state.spuds -= crate.price;
+            state.crates.push(crate.name);
+            updateSpuds();
+            showToast(`${crate.name} added to My Crates.`);
+            drawShop();
+          }));
+        } else if (state.activeTab === "skin") {
+          const grid = document.createElement("div");
+          grid.className = "skin-grid";
+          [
+            { name: "Field Worn", note: "Your trusted starting look" },
+            { name: "Moss Walker", note: "A little closer to the trees" },
+            { name: "Golden Hour", note: "Bright days, long trails" }
+          ].forEach((skin, index) => {
+            const card = document.createElement("article");
+            card.className = "skin-card";
+            const selected = state.selectedSkin === skin.name;
+            card.innerHTML = `<div class="skin-swatch" aria-hidden="true"></div><h3>${skin.name}</h3><p>${skin.note}</p>
+              <button class="button small ${selected ? "" : "primary"}" data-skin="${index}">${selected ? "Equipped" : "Equip"}</button>`;
+            grid.append(card);
+          });
+          content.append(grid);
+          $$("[data-skin]", content).forEach(button => button.addEventListener("click", () => {
+            state.selectedSkin = ["Field Worn", "Moss Walker", "Golden Hour"][Number(button.dataset.skin)];
+            drawShop();
+            showToast(`${state.selectedSkin} equipped.`);
+          }));
+        } else if (state.activeTab === "inventory") {
+          const box = document.createElement("div");
+          box.className = "empty-state";
+          const inventory = currentInventory();
+          const total = Object.values(inventory.resources).reduce((sum, amount) => sum + amount, 0) +
+            Object.values(inventory.items).reduce((sum, amount) => sum + amount, 0);
+          if (total) {
+            const rows = resourceTypes.filter(item => inventory.resources[item.key] > 0)
+              .map(item => `<span>${item.name}</span><b class="gold">${formatAmount(inventory.resources[item.key])}</b>`);
+            Object.entries(inventory.items).filter(([, amount]) => amount > 0)
+              .forEach(([name, amount]) => rows.push(`<span>${name}</span><b class="gold">${amount}</b>`));
+            box.innerHTML = `<strong>${state.server} pack</strong><div style="display:grid;grid-template-columns:1fr auto;gap:8px 24px;max-width:310px;margin:17px auto 0;text-align:left">${rows.join("")}</div>`;
+          } else {
+            box.innerHTML = `<strong>${state.server} pack is still empty.</strong>Join this server to get your starter gear.`;
+          }
+          content.append(box);
+        } else {
+          const box = document.createElement("div");
+          box.className = "empty-state";
+          if (state.crates.length) {
+            const counts = state.crates.reduce((items, name) => (items[name] = (items[name] || 0) + 1, items), {});
+            box.innerHTML = `<strong>Crates packed for the road</strong>${Object.entries(counts).map(([name, count]) => `<p>${name} <span class="gold">× ${count}</span></p>`).join("")}`;
+          } else {
+            box.innerHTML = "<strong>No crates tucked away yet.</strong>Browse Crates to pick up a little surprise.";
+          }
+          content.append(box);
+        }
+      }
+
+      $$(".tab-button").forEach(button => button.addEventListener("click", () => {
+        state.activeTab = button.dataset.tab;
+        drawShop();
+      }));
+
+      function syncSettingsControls() {
+        $$('[data-setting-range="sensitivity"]').forEach(input => { input.value = String(Math.round(state.sensitivity * 100)); });
+        $$('[data-setting-range="volume"]').forEach(input => { input.value = String(Math.round(state.volume * 100)); });
+        $$('[data-setting-value="sensitivity"]').forEach(value => { value.textContent = `${Math.round(state.sensitivity * 100)}%`; });
+        $$('[data-setting-value="volume"]').forEach(value => { value.textContent = `${Math.round(state.volume * 100)}%`; });
+        $$("[data-quality]").forEach(option => option.classList.toggle("selected", option.dataset.quality === state.quality));
+      }
+      $$("[data-setting-range]").forEach(input => input.addEventListener("input", event => {
+        const setting = event.currentTarget.dataset.settingRange;
+        const value = Number(event.currentTarget.value);
+        if (setting === "sensitivity") state.sensitivity = value / 100;
+        if (setting === "volume") state.volume = value / 100;
+        syncSettingsControls();
+      }));
+      $$("[data-quality]").forEach(button => button.addEventListener("click", () => {
+        state.quality = button.dataset.quality;
+        syncSettingsControls();
+      }));
+
+      let toastTimer;
+      function showToast(message) {
+        const toast = $("#toast");
+        toast.textContent = message;
+        toast.classList.add("show");
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove("show"), 1900);
+      }
+
+      const canvas = $("#world-canvas");
+      const ctx = canvas.getContext("2d");
+      const mapCanvas = $("#map-canvas");
+      const mapCtx = mapCanvas.getContext("2d");
+      const world = { width: 3200, height: 2400, obstacles: [], nodes: [], animals: [], drops: [] };
+      const player = { x: 1600, y: 1200, radius: 13, facing: 0, walking: false, walkPhase: 0 };
+      const keys = new Set();
+      let lastTime = 0;
+      let nearNode = null;
+      let nearAnimal = null;
+      let animationFrame = 0;
+      let audioContext = null;
+      const cellSize = 100;
+      const terrainPalette = ["#38412e", "#3b4330", "#3a422f", "#404634", "#373f2d"];
+
+      function seededRandom(seed) {
+        let value = seed >>> 0;
+        return () => {
+          value = (value * 1664525 + 1013904223) >>> 0;
+          return value / 4294967296;
+        };
+      }
+
+      const random = seededRandom(481516);
+      const groundTiles = [];
+      for (let y = 0; y < world.height; y += cellSize) {
+        for (let x = 0; x < world.width; x += cellSize) {
+          groundTiles.push({ x, y, color: terrainPalette[Math.floor(random() * terrainPalette.length)], fleck: random() });
+        }
+      }
+
+      function makeNode(type, x, y, scale = 1) {
+        const resourceKey = type === "tree" ? "wood" : type === "hemp" ? "cloth" : type;
+        const resource = resourceTypes.find(item => item.key === resourceKey);
+        return {
+          type, name: resource.name, x, y, radius: type === "tree" ? 29 * scale : (type === "hemp" ? 13 * scale : 22 * scale),
+          max: type === "tree" || type === "hemp" ? 3 : 2,
+          remaining: type === "tree" || type === "hemp" ? 3 : 2,
+          amount: resource.amount, color: resource.color, scale, removed: false
+        };
+      }
+
+      function generateWorld() {
+        const obstacleRandom = seededRandom(99127);
+        world.obstacles = [];
+        world.nodes = [];
+        world.animals = [];
+        const types = ["tree", "tree", "tree", "stone", "sulfur", "metal", "hemp"];
+        for (let i = 0; i < 145; i++) {
+          const x = 90 + obstacleRandom() * (world.width - 180);
+          const y = 90 + obstacleRandom() * (world.height - 180);
+          if (Math.hypot(x - 1600, y - 1200) < 165) continue;
+          const type = types[Math.floor(obstacleRandom() * types.length)];
+          const node = makeNode(type, x, y, .83 + obstacleRandom() * .36);
+          world.nodes.push(node);
+          if (type !== "hemp") world.obstacles.push(node);
+        }
+        for (let i = 0; i < 34; i++) {
+          const x = obstacleRandom() * world.width;
+          const y = obstacleRandom() * world.height;
+          world.obstacles.push({ type: "rock", x, y, radius: 9 + obstacleRandom() * 7 });
+        }
+        const animalTypes = ["chicken", "chicken", "chicken", "cow", "cow", "horse"];
+        for (let i = 0; i < 34; i++) {
+          const x = 70 + obstacleRandom() * (world.width - 140);
+          const y = 70 + obstacleRandom() * (world.height - 140);
+          if (Math.hypot(x - player.x, y - player.y) < 190) continue;
+          const type = animalTypes[Math.floor(obstacleRandom() * animalTypes.length)];
+          world.animals.push({ type, x, y, radius: type === "chicken" ? 14 : type === "cow" ? 24 : 27, health: 100, maxHealth: 100, fleeX: 0, fleeY: 0, fleeTimer: 0, alive: true });
+        }
+      }
+
+      function resizeCanvas() {
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        const rect = canvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        canvas.width = Math.round(rect.width * ratio);
+        canvas.height = Math.round(rect.height * ratio);
+        ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      }
+
+      function roundedRect(x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, height, radius);
+      }
+
+      function drawWorld(cameraX, cameraY, width, height) {
+        ctx.fillStyle = "#30392a";
+        ctx.fillRect(0, 0, width, height);
+        ctx.save();
+        ctx.translate(-cameraX, -cameraY);
+
+        for (const tile of groundTiles) {
+          ctx.fillStyle = tile.color;
+          ctx.fillRect(tile.x, tile.y, cellSize + 1, cellSize + 1);
+          ctx.fillStyle = "rgba(190,183,128,.035)";
+          for (let i = 0; i < 3; i++) {
+            const fx = tile.x + ((tile.fleck * 991 + i * 31) % cellSize);
+            const fy = tile.y + ((tile.fleck * 641 + i * 43) % cellSize);
+            ctx.fillRect(fx, fy, 2, 2);
+          }
+        }
+
+        const foliageDensity = state.quality === "low" ? .2 : state.quality === "medium" ? .55 : 1;
+        const firstTuft = Math.floor(cameraX / 42) * 42;
+        const firstTuftY = Math.floor(cameraY / 42) * 42;
+        for (let y = firstTuftY; y < cameraY + height + 42; y += 42) {
+          for (let x = firstTuft; x < cameraX + width + 42; x += 42) {
+            const pattern = (Math.floor(x / 42) * 17 + Math.floor(y / 42) * 31) % 11;
+            if (pattern > 5 || pattern / 6 > foliageDensity) continue;
+            ctx.strokeStyle = "rgba(179,185,123,.12)";
+            ctx.lineWidth = 1.3;
+            ctx.beginPath();
+            ctx.moveTo(x, y + 4);
+            ctx.lineTo(x + 2, y - 3);
+            ctx.moveTo(x + 4, y + 5);
+            ctx.lineTo(x + 6, y - 1);
+            ctx.stroke();
+          }
+        }
+
+        ctx.strokeStyle = "rgba(190,171,111,.22)";
+        ctx.lineWidth = 5;
+        ctx.strokeRect(4, 4, world.width - 8, world.height - 8);
+
+        const visible = world.nodes.filter(node => !node.removed &&
+          node.x > cameraX - 80 && node.x < cameraX + width + 80 && node.y > cameraY - 80 && node.y < cameraY + height + 80);
+        visible.sort((a, b) => a.y - b.y);
+        visible.forEach(drawNode);
+        world.animals.filter(animal => animal.alive &&
+          animal.x > cameraX - 50 && animal.x < cameraX + width + 50 && animal.y > cameraY - 50 && animal.y < cameraY + height + 50)
+          .sort((a, b) => a.y - b.y).forEach(drawAnimal);
+        world.drops.filter(drop =>
+          drop.x > cameraX - 40 && drop.x < cameraX + width + 40 && drop.y > cameraY - 40 && drop.y < cameraY + height + 40)
+          .forEach(drawWorldDrop);
+
+        world.obstacles.forEach(obstacle => {
+          if (obstacle.node?.removed) return;
+          if (obstacle.x < cameraX - 40 || obstacle.x > cameraX + width + 40 || obstacle.y < cameraY - 40 || obstacle.y > cameraY + height + 40) return;
+          if (obstacle.type === "rock") drawRock(obstacle);
+        });
+        ctx.restore();
+        const daylight = (Math.cos((state.worldTime / 240) * Math.PI * 2) + 1) / 2;
+        const darkness = (1 - daylight) * .52;
+        if (darkness > .01) {
+          ctx.fillStyle = `rgba(11, 16, 34, ${darkness})`;
+          ctx.fillRect(0, 0, width, height);
+        }
+        drawPlayer(cameraX, cameraY);
+      }
+
+      function resizeMapCanvas() {
+        const rect = mapCanvas.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const ratio = Math.min(window.devicePixelRatio || 1, 2);
+        mapCanvas.width = Math.round(rect.width * ratio);
+        mapCanvas.height = Math.round(rect.height * ratio);
+        mapCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        drawMap();
+      }
+
+      function drawMap() {
+        const width = mapCanvas.clientWidth, height = mapCanvas.clientHeight;
+        if (!width || !height) return;
+        mapCtx.clearRect(0, 0, width, height);
+        mapCtx.fillStyle = "#252d21";
+        mapCtx.fillRect(0, 0, width, height);
+        const scale = Math.min(width / world.width, height / world.height);
+        const offsetX = (width - world.width * scale) / 2;
+        const offsetY = (height - world.height * scale) / 2;
+        mapCtx.save();
+        mapCtx.translate(offsetX, offsetY);
+        mapCtx.scale(scale, scale);
+        groundTiles.forEach(tile => {
+          mapCtx.fillStyle = tile.color;
+          mapCtx.fillRect(tile.x, tile.y, cellSize + 1, cellSize + 1);
+        });
+        mapCtx.strokeStyle = "rgba(220,189,111,.45)";
+        mapCtx.lineWidth = 8;
+        mapCtx.strokeRect(4, 4, world.width - 8, world.height - 8);
+        const markerColors = {
+          tree: "#527547", stone: "#c2c5b8", sulfur: "#e1c74c",
+          metal: "#aaaeb0", hemp: "#a1bd64"
+        };
+        world.nodes.forEach(node => {
+          if (node.removed) return;
+          mapCtx.fillStyle = markerColors[node.type];
+          mapCtx.beginPath();
+          mapCtx.arc(node.x, node.y, Math.max(12, node.radius * .65), 0, Math.PI * 2);
+          mapCtx.fill();
+        });
+        mapCtx.fillStyle = "rgba(0,0,0,.5)";
+        mapCtx.beginPath(); mapCtx.arc(player.x, player.y, 36, 0, Math.PI * 2); mapCtx.fill();
+        mapCtx.fillStyle = "#f0cd78";
+        mapCtx.beginPath(); mapCtx.arc(player.x, player.y, 23, 0, Math.PI * 2); mapCtx.fill();
+        mapCtx.strokeStyle = "#fff3c9";
+        mapCtx.lineWidth = 8;
+        mapCtx.beginPath(); mapCtx.arc(player.x, player.y, 36, 0, Math.PI * 2); mapCtx.stroke();
+        mapCtx.restore();
+      }
+
+      function drawNode(node) {
+        const x = node.x, y = node.y, r = node.radius;
+        if (node.type === "tree") {
+          ctx.fillStyle = "rgba(0,0,0,.22)";
+          ctx.beginPath(); ctx.ellipse(x + 5, y + 13, r * .8, r * .42, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#554533";
+          roundedRect(x - 5, y - 3, 10, 28, 4); ctx.fill();
+          ctx.fillStyle = "#253425";
+          ctx.beginPath(); ctx.arc(x, y - 5, r, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#34452f";
+          ctx.beginPath(); ctx.arc(x - r * .25, y - r * .25, r * .67, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#41543a";
+          ctx.beginPath(); ctx.arc(x + r * .2, y - r * .35, r * .43, 0, Math.PI * 2); ctx.fill();
+        } else if (node.type === "hemp") {
+          ctx.strokeStyle = "#809a57";
+          ctx.lineWidth = 3;
+          for (let i = -1; i <= 1; i++) {
+            ctx.beginPath(); ctx.moveTo(x, y + 8); ctx.quadraticCurveTo(x + i * 10, y - 2, x + i * 7, y - 12); ctx.stroke();
+          }
+          ctx.fillStyle = "#b5a06c";
+          ctx.beginPath(); ctx.arc(x, y - 10, 3, 0, Math.PI * 2); ctx.fill();
+        } else {
+          ctx.fillStyle = "rgba(0,0,0,.24)";
+          ctx.beginPath(); ctx.ellipse(x + 4, y + 12, r, r * .48, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = node.type === "stone" ? "#777c70" : node.type === "sulfur" ? "#8f833e" : "#58666b";
+          ctx.beginPath();
+          ctx.moveTo(x - r, y + 6); ctx.lineTo(x - r * .75, y - r * .4); ctx.lineTo(x - r * .15, y - r);
+          ctx.lineTo(x + r * .65, y - r * .72); ctx.lineTo(x + r, y + r * .12); ctx.lineTo(x + r * .44, y + r * .62); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = node.type === "metal" ? "#c4d0d1" : node.color;
+          ctx.globalAlpha = .68;
+          ctx.beginPath(); ctx.moveTo(x - r * .42, y - r * .34); ctx.lineTo(x - r * .15, y - r * .73); ctx.lineTo(x + r * .2, y - r * .55); ctx.lineTo(x - r * .02, y - r * .08); ctx.closePath(); ctx.fill();
+          ctx.globalAlpha = 1;
+          if (node.type === "metal") {
+            ctx.strokeStyle = "rgba(225,237,239,.8)";
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(x + r * .18, y - r * .45); ctx.lineTo(x + r * .58, y + r * .05); ctx.lineTo(x + r * .15, y + r * .42); ctx.stroke();
+          }
+        }
+        if (nearNode === node) {
+          ctx.strokeStyle = "rgba(240,205,120,.62)";
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([4, 4]);
+          ctx.beginPath(); ctx.arc(x, y, r + 8, 0, Math.PI * 2); ctx.stroke();
+          ctx.setLineDash([]);
+        }
+      }
+
+      function drawRock(rock) {
+        ctx.fillStyle = "rgba(0,0,0,.2)";
+        ctx.beginPath(); ctx.ellipse(rock.x + 3, rock.y + 7, rock.radius, rock.radius * .5, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#6b7166";
+        ctx.beginPath(); ctx.arc(rock.x, rock.y, rock.radius, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(202,204,187,.3)";
+        ctx.beginPath(); ctx.arc(rock.x - 3, rock.y - 4, rock.radius * .44, 0, Math.PI * 2); ctx.fill();
+      }
+
+      function drawAnimal(animal) {
+        const { x, y, type } = animal;
+        ctx.fillStyle = "rgba(0,0,0,.25)";
+        ctx.beginPath(); ctx.ellipse(x + 2, y + 8, animal.radius, animal.radius * .48, 0, 0, Math.PI * 2); ctx.fill();
+        if (type === "chicken") {
+          ctx.fillStyle = "#e7e2d2";
+          ctx.beginPath(); ctx.ellipse(x, y, 11, 8, -.2, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#c8c0aa";
+          ctx.beginPath(); ctx.ellipse(x - 1, y + 1, 5, 5, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#e7e2d2";
+          ctx.beginPath(); ctx.arc(x + 8, y - 5, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#d15f45";
+          ctx.beginPath(); ctx.arc(x + 7, y - 10, 2.5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#e6a244";
+          ctx.beginPath(); ctx.moveTo(x + 12, y - 5); ctx.lineTo(x + 18, y - 3); ctx.lineTo(x + 12, y - 1); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = "#c48a3e"; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(x - 3, y + 6); ctx.lineTo(x - 3, y + 11); ctx.moveTo(x + 3, y + 6); ctx.lineTo(x + 3, y + 11); ctx.stroke();
+        } else if (type === "cow") {
+          ctx.fillStyle = "#e4e0d1";
+          ctx.beginPath(); ctx.ellipse(x, y, 22, 14, -.1, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#4d4a43";
+          ctx.beginPath(); ctx.ellipse(x - 9, y - 4, 7, 5, -.3, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(x + 7, y + 5, 8, 5, .2, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#d8d0b9";
+          ctx.beginPath(); ctx.ellipse(x + 19, y - 1, 8, 7, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#c48778";
+          ctx.beginPath(); ctx.ellipse(x + 25, y + 1, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#554a37";
+          [[-13,-10],[12,-9],[-13,9],[9,9]].forEach(([dx,dy]) => {
+            ctx.beginPath(); ctx.ellipse(x + dx, y + dy, 3, 5, 0, 0, Math.PI * 2); ctx.fill();
+          });
+        } else {
+          ctx.fillStyle = "#8b5e3d";
+          ctx.beginPath(); ctx.ellipse(x, y, 22, 11, -.12, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#714a34";
+          [[-14,-8],[13,-7],[-14,8],[12,7]].forEach(([dx,dy]) => {
+            ctx.beginPath(); ctx.roundRect(x + dx - 2, y + dy, 5, 12, 2); ctx.fill();
+          });
+          ctx.beginPath(); ctx.ellipse(x + 16, y - 2, 7, 12, -.45, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#5b3e30";
+          ctx.beginPath(); ctx.ellipse(x + 21, y - 9, 8, 5, -.15, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(x - 20, y); ctx.quadraticCurveTo(x - 32, y + 8, x - 29, y + 13); ctx.strokeStyle = "#4a3429"; ctx.lineWidth = 3; ctx.stroke();
+        }
+        const barWidth = type === "chicken" ? 24 : 38;
+        const barY = y - animal.radius - 9;
+        ctx.fillStyle = "rgba(10,11,9,.78)";
+        ctx.fillRect(x - barWidth / 2, barY, barWidth, 4);
+        ctx.fillStyle = animal.health > 35 ? "#a4b86c" : "#c86e54";
+        ctx.fillRect(x - barWidth / 2, barY, barWidth * Math.max(0, animal.health / animal.maxHealth), 4);
+      }
+
+      function drawWorldDrop(drop) {
+        const resource = drop.type === "resource" ? resourceTypes.find(item => item.key === drop.key) : null;
+        ctx.fillStyle = "rgba(0,0,0,.32)";
+        ctx.beginPath(); ctx.ellipse(drop.x, drop.y + 8, 12, 6, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = resource?.color || "#c49b62";
+        ctx.beginPath(); ctx.roundRect(drop.x - 9, drop.y - 9, 18, 18, 4); ctx.fill();
+        ctx.strokeStyle = "rgba(255,235,185,.75)";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(drop.x - 9, drop.y - 9, 18, 18);
+      }
+
+      function drawPlayer(cameraX, cameraY) {
+        const x = player.x - cameraX, y = player.y - cameraY;
+        ctx.fillStyle = "rgba(0,0,0,.28)";
+        ctx.beginPath(); ctx.ellipse(x, y + 8, 14, 8, 0, 0, Math.PI * 2); ctx.fill();
+
+        const stride = player.walking ? Math.sin(player.walkPhase) * 2.5 : 0;
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(player.facing + Math.PI / 2);
+
+        ctx.fillStyle = "#594532";
+        roundedRect(-9, 0, 18, 14, 5);
+        ctx.fill();
+        ctx.strokeStyle = "#b28b56";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(0, 3); ctx.lineTo(0, 12); ctx.stroke();
+
+        ctx.fillStyle = "#34392d";
+        roundedRect(-7, 7 + stride, 5, 9, 2); ctx.fill();
+        roundedRect(2, 7 - stride, 5, 9, 2); ctx.fill();
+        ctx.fillStyle = "#292820";
+        roundedRect(-8, 14 + stride, 6, 4, 2); ctx.fill();
+        roundedRect(2, 14 - stride, 6, 4, 2); ctx.fill();
+
+        ctx.fillStyle = "#526044";
+        roundedRect(-11, -4 - stride, 5, 12, 2.5); ctx.fill();
+        roundedRect(6, -4 + stride, 5, 12, 2.5); ctx.fill();
+        ctx.fillStyle = "#c69d6a";
+        ctx.beginPath(); ctx.arc(-8.5, 8 - stride, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(8.5, 8 + stride, 2.5, 0, Math.PI * 2); ctx.fill();
+
+        ctx.fillStyle = "#596b4b";
+        roundedRect(-7, -7, 14, 18, 5); ctx.fill();
+        ctx.fillStyle = "#6d7e58";
+        roundedRect(-5, -6, 10, 5, 2); ctx.fill();
+        ctx.strokeStyle = "rgba(221,201,148,.65)";
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, -2); ctx.lineTo(0, 8); ctx.stroke();
+        ctx.fillStyle = "#cbb37c";
+        ctx.fillRect(-2, 1, 4, 3);
+
+        ctx.fillStyle = "#d9b98b";
+        ctx.beginPath(); ctx.arc(0, -11, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#493c2d";
+        ctx.beginPath(); ctx.arc(0, -14, 6.7, Math.PI, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#2d2b22";
+        ctx.beginPath(); ctx.arc(-2.6, -10, 1, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(2.6, -10, 1, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "#c79a6c";
+        ctx.beginPath(); ctx.arc(0, -7.5, 1.5, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+
+      function collidesAt(x, y) {
+        if (x - player.radius < 8 || x + player.radius > world.width - 8 || y - player.radius < 8 || y + player.radius > world.height - 8) return true;
+        const obstacleCollision = world.obstacles.some(obstacle => {
+          if (obstacle.removed || obstacle.node?.removed) return false;
+          const dx = x - obstacle.x, dy = y - obstacle.y;
+          const combined = obstacle.radius + player.radius * .72;
+          return dx * dx + dy * dy < combined * combined;
+        });
+        if (obstacleCollision) return true;
+        return world.animals.some(animal => {
+          if (!animal.alive) return false;
+          const dx = x - animal.x, dy = y - animal.y;
+          const combined = animal.radius * .72 + player.radius;
+          return dx * dx + dy * dy < combined * combined;
+        });
+      }
+
+      function closestNode() {
+        let nearest = null, nearestDistance = 70;
+        for (const node of world.nodes) {
+          if (node.removed) continue;
+          const distance = Math.hypot(player.x - node.x, player.y - node.y);
+          if (distance < nearestDistance) { nearest = node; nearestDistance = distance; }
+        }
+        return nearest;
+      }
+
+      function closestAnimal() {
+        let nearest = null, nearestDistance = 75;
+        for (const animal of world.animals) {
+          if (!animal.alive) continue;
+          const distance = Math.hypot(player.x - animal.x, player.y - animal.y);
+          if (distance < nearestDistance) { nearest = animal; nearestDistance = distance; }
+        }
+        return nearest;
+      }
+
+      function selectedHotbarItem() {
+        return stackForHotbar(currentInventory(), currentInventory().hotbar[state.selectedHotbar]);
+      }
+
+      function miningToolFor(nodeType) {
+        return nodeType === "tree" || nodeType === "hemp"
+          ? ["Stone Hatchet", "Metal Hatchet"]
+          : ["Stone Pickaxe", "Metal Pickaxe"];
+      }
+
+      function selectedItemCanMine(nodeType) {
+        const item = selectedHotbarItem();
+        return item && miningToolFor(nodeType).includes(item.name);
+      }
+
+      function animalDamage(item) {
+        if (!item) return 0;
+        if (item.name === "Stone") return 10;
+        if (item.name === "Stone Hatchet" || item.name === "Stone Pickaxe") return 25;
+        if (item.name === "Metal Hatchet" || item.name === "Metal Pickaxe") return 35;
+        return 0;
+      }
+
+      function drawInventory() {
+        const inventory = currentInventory();
+        $("#inventory-server").textContent = state.server;
+        if (state.selectedInventorySlot !== null && !inventory.slots[state.selectedInventorySlot]) {
+          state.selectedInventorySlot = null;
+        }
+        const slots = inventory.slots.map((stack, index) => {
+          if (!stack) {
+            return `<div class="inventory-slot empty" data-inventory-slot="${index}" data-item-key=""><span class="inventory-slot-number">${index + 1}</span><span class="muted">Empty</span></div>`;
+          }
+          const selected = state.selectedInventorySlot === index;
+          const name = stackName(stack.type, stack.key);
+          const icon = stackModel(stack.type, stack.key);
+          return `<div class="inventory-slot filled${selected ? " selected" : ""}" draggable="true" data-inventory-slot="${index}" aria-label="${name}, ${formatAmount(stack.amount)}">
+            <span class="inventory-slot-number">${index + 1}</span><span class="item-model ${icon}" aria-hidden="true"></span>
+            <span class="inventory-slot-name">${name}</span><span class="inventory-slot-count">×${formatAmount(stack.amount)}</span>
+          </div>`;
+        }).join("");
+        const categoryButtons = craftingCategories.map(category =>
+          `<button type="button" class="craft-category${state.craftCategory === category ? " selected" : ""}" data-craft-category="${category}">${category}</button>`).join("");
+        const visibleRecipes = state.craftCategory === "All"
+          ? craftingRecipes
+          : craftingRecipes.filter(recipe => recipe.category === state.craftCategory);
+        const recipes = visibleRecipes.map(recipe => {
+          const canCraft = canAddStack(inventory, "item", recipe.name, 1) &&
+            (inventory.infiniteResources || Object.entries(recipe.costs).every(([key, amount]) => inventory.resources[key] >= amount));
+          const cost = Object.entries(recipe.costs).map(([key, amount]) => {
+            const resource = resourceTypes.find(type => type.key === key);
+            return `${resource.name} ${amount}`;
+          }).join(" · ");
+          return `<article class="craft-recipe">
+            <div class="craft-recipe-top"><span class="item-model ${recipe.icon}" aria-hidden="true"></span><span class="craft-recipe-name">${recipe.name}</span></div>
+            <div class="craft-cost">Requires: ${cost}</div>
+            <button class="button small primary" data-craft="${recipe.id}" ${canCraft ? "" : "disabled"}>Craft</button>
+          </article>`;
+        }).join("");
+        const selected = state.selectedInventorySlot === null ? null : inventory.slots[state.selectedInventorySlot];
+        const selectedName = selected ? stackName(selected.type, selected.key) : "Select an item to drop or split it.";
+        const selectedArmor = selected?.type === "item"
+          ? craftingRecipes.find(recipe => recipe.name === selected.key && recipe.armorSlot)
+          : null;
+        const infiniteResourceSelected = selected?.type === "resource" && inventory.infiniteResources;
+        const actions = `<div class="inventory-actions">
+          <span class="inventory-actions-label">${selectedName}</span>
+          ${selectedArmor ? `<button class="button small" data-inventory-action="equip">Equip</button>` : ""}
+          <button class="button small" data-inventory-action="split" ${selected && Number.isFinite(selected.amount) && selected.amount > 1 && inventory.slots.includes(null) ? "" : "disabled"}>Split stack</button>
+          <button class="button small" data-inventory-action="drop-one" ${selected && !infiniteResourceSelected ? "" : "disabled"}>Drop 1</button>
+          <button class="button small" data-inventory-action="drop-stack" ${selected && !infiniteResourceSelected ? "" : "disabled"}>Drop stack</button>
+        </div>`;
+        const armor = Object.entries(inventory.armor).map(([part, equipped]) =>
+          `<div class="armor-slot"><b>${part}</b><span>${equipped || "Empty"}</span></div>`).join("");
+        const hotbar = inventory.hotbar.map((key, index) => {
+          const item = stackForHotbar(inventory, key);
+          return `<div class="inventory-hotbar-slot" data-inventory-hotbar="${index}" data-hotbar-index="${index}" aria-label="${item ? item.name : "Empty hotbar slot"}">
+            <span class="inventory-slot-number">${index + 1}</span>${item ? `<span class="item-model ${item.icon}" aria-hidden="true"></span><span>${item.name}</span>` : "<span>Drop item here</span>"}
+          </div>`;
+        }).join("");
+        $("#inventory-content").innerHTML = `<div class="inventory-content">
+          <section class="inventory-main">
+            <div class="character-panel">
+              <div class="character-preview"><div class="inventory-avatar" aria-hidden="true"><div class="inventory-avatar-head"></div><div class="inventory-avatar-body"></div><div class="inventory-avatar-legs"></div></div><span>Player</span></div>
+              <div><div class="inventory-section-title">Armor</div><div class="armor-slots">${armor}</div></div>
+            </div>
+            <div class="inventory-section-title">Pack · Drag items to rearrange</div>
+            <div class="inventory-slots">${slots}</div>${actions}
+            <div class="inventory-section-title">Hotbar · Drag items here to equip</div>
+            <div class="inventory-hotbar">${hotbar}</div>
+          </section>
+          <section class="craft-panel"><h3 class="craft-heading">Crafting</h3>
+            <nav class="craft-categories" aria-label="Crafting categories">${categoryButtons}</nav>
+            ${state.craftCategory === "Resources" ? `<div class="resource-list">${resourceTypes.map(resource =>
+              `<div class="resource-entry"><span class="item-model ${resource.key}" aria-hidden="true"></span><span>${resource.name}</span><b class="gold" style="margin-left:auto">${formatAmount(inventory.resources[resource.key])}</b></div>`).join("")}</div>`
+              : recipes || `<p class="muted">No recipes in this category yet.</p>`}
+          </section>
+        </div>`;
+
+        $$(".inventory-slot.filled").forEach(slot => {
+          slot.addEventListener("dragstart", event => {
+            event.dataTransfer.setData("text/plain", slot.dataset.inventorySlot);
+            event.dataTransfer.effectAllowed = "move";
+            slot.classList.add("dragging");
+          });
+          slot.addEventListener("dragend", () => slot.classList.remove("dragging"));
+          slot.addEventListener("click", () => {
+            state.selectedInventorySlot = Number(slot.dataset.inventorySlot);
+            drawInventory();
+          });
+        });
+        $$("[data-inventory-slot]").forEach(slot => {
+          slot.addEventListener("dragover", event => {
+            event.preventDefault();
+            slot.classList.add("drop-target");
+          });
+          slot.addEventListener("dragleave", () => slot.classList.remove("drop-target"));
+          slot.addEventListener("drop", event => {
+            event.preventDefault();
+            slot.classList.remove("drop-target");
+            const sourceIndex = Number(event.dataTransfer.getData("text/plain"));
+            const destinationIndex = Number(slot.dataset.inventorySlot);
+            if (!Number.isInteger(sourceIndex) || sourceIndex < 0 || sourceIndex >= inventory.slots.length || sourceIndex === destinationIndex) return;
+            const source = inventory.slots[sourceIndex];
+            if (!source) return;
+            const destination = inventory.slots[destinationIndex];
+            if (destination && destination.type === source.type && destination.key === source.key) {
+              if (inventory.infiniteResources && source.type === "resource") {
+                if (source.amount === Infinity) destination.amount = Infinity;
+                inventory.slots[sourceIndex] = null;
+                state.selectedInventorySlot = destinationIndex;
+                drawInventory();
+                drawHotbar();
+                return;
+              }
+              const moved = Math.min(source.amount, maxStackSize - destination.amount);
+              destination.amount += moved;
+              source.amount -= moved;
+              if (!source.amount) inventory.slots[sourceIndex] = null;
+            } else {
+              inventory.slots[destinationIndex] = source;
+              inventory.slots[sourceIndex] = destination;
+            }
+            state.selectedInventorySlot = destinationIndex;
+            drawInventory();
+            drawHotbar();
+          });
+        });
+        $$(".inventory-hotbar-slot").forEach(slot => {
+          slot.addEventListener("dragover", event => {
+            event.preventDefault();
+            slot.classList.add("drop-target");
+          });
+          slot.addEventListener("dragleave", () => slot.classList.remove("drop-target"));
+          slot.addEventListener("drop", event => {
+            event.preventDefault();
+            const sourceIndex = Number(event.dataTransfer.getData("text/plain"));
+            const source = inventory.slots[sourceIndex];
+            if (!source) return;
+            const hotbarIndex = Number(slot.dataset.hotbarIndex);
+            inventory.hotbar[hotbarIndex] = `${source.type}:${source.key}`;
+            state.selectedHotbar = hotbarIndex;
+            drawInventory();
+            drawHotbar();
+          });
+        });
+        $$("[data-inventory-action]").forEach(button => button.addEventListener("click", () => {
+          const slotIndex = state.selectedInventorySlot;
+          if (slotIndex === null || !inventory.slots[slotIndex]) return;
+          if (button.dataset.inventoryAction === "equip") equipInventoryArmor(slotIndex);
+          if (button.dataset.inventoryAction === "split") splitInventoryStack(slotIndex);
+          if (button.dataset.inventoryAction === "drop-one") dropInventoryStack(slotIndex, 1);
+          if (button.dataset.inventoryAction === "drop-stack") dropInventoryStack(slotIndex, inventory.slots[slotIndex].amount);
+        }));
+        $$("[data-craft-category]").forEach(button => button.addEventListener("click", () => {
+          state.craftCategory = button.dataset.craftCategory;
+          drawInventory();
+        }));
+        $$("[data-craft]").forEach(button => button.addEventListener("click", () => craftItem(button.dataset.craft)));
+      }
+
+      function equipInventoryArmor(slotIndex) {
+        const inventory = currentInventory();
+        const stack = inventory.slots[slotIndex];
+        const recipe = stack?.type === "item" ? craftingRecipes.find(item => item.name === stack.key && item.armorSlot) : null;
+        if (!recipe) return;
+        const previous = inventory.armor[recipe.armorSlot];
+        if (previous && stack.amount > 1 && !canAddStack(inventory, "item", previous, 1)) {
+          showToast("Make room in your inventory before changing armor.");
+          return;
+        }
+        removeStackAmount(inventory, slotIndex, 1);
+        inventory.armor[recipe.armorSlot] = recipe.name;
+        if (previous) addStack(inventory, "item", previous, 1);
+        state.selectedInventorySlot = inventory.slots[slotIndex] ? slotIndex : null;
+        drawInventory();
+        drawHotbar();
+        showToast(`${recipe.name} equipped.`);
+      }
+
+      function splitInventoryStack(slotIndex) {
+        const inventory = currentInventory();
+        const stack = inventory.slots[slotIndex];
+        const emptySlot = inventory.slots.indexOf(null);
+        if (!stack || !Number.isFinite(stack.amount) || stack.amount < 2 || emptySlot < 0) return;
+        const amount = Math.floor(stack.amount / 2);
+        stack.amount -= amount;
+        inventory.slots[emptySlot] = { ...stack, amount };
+        state.selectedInventorySlot = emptySlot;
+        drawInventory();
+      }
+
+      function dropInventoryStack(slotIndex, amount) {
+        const inventory = currentInventory();
+        const stack = inventory.slots[slotIndex];
+        if (!stack) return;
+        if (stack.type === "resource" && inventory.infiniteResources) {
+          showToast("Infinite resources cannot be dropped.");
+          return;
+        }
+        const type = stack.type, key = stack.key;
+        const dropped = removeStackAmount(inventory, slotIndex, amount);
+        if (!dropped) return;
+        const offset = 26 + inventory.drops.length % 4 * 8;
+        inventory.drops.push({
+          type, key, amount: dropped,
+          x: Math.max(12, Math.min(world.width - 12, player.x + Math.cos(player.facing) * offset)),
+          y: Math.max(12, Math.min(world.height - 12, player.y + Math.sin(player.facing) * offset))
+        });
+        world.drops = inventory.drops;
+        state.selectedInventorySlot = inventory.slots[slotIndex] ? slotIndex : null;
+        drawInventory();
+        drawHotbar();
+        showToast(`Dropped ${dropped} ${stackName(type, key)}.`);
+      }
+
+      function craftItem(recipeId) {
+        const recipe = craftingRecipes.find(item => item.id === recipeId);
+        if (!recipe) return;
+        const inventory = currentInventory();
+        const canCraft = inventory.infiniteResources ||
+          Object.entries(recipe.costs).every(([key, amount]) => inventory.resources[key] >= amount);
+        if (!canCraft || !canAddStack(inventory, "item", recipe.name, 1)) {
+          showToast("Not enough materials or inventory space.");
+          return;
+        }
+        Object.entries(recipe.costs).forEach(([key, amount]) => consumeResource(inventory, key, amount));
+        addStack(inventory, "item", recipe.name, 1);
+        const hotbarEligible = ["Stone Hatchet", "Stone Pickaxe", "Metal Hatchet", "Metal Pickaxe", "Hammer", "Handmade Fishing Rod"];
+        const hotbarIndex = inventory.hotbar.indexOf(null);
+        if (hotbarEligible.includes(recipe.name) && hotbarIndex >= 0) inventory.hotbar[hotbarIndex] = `item:${recipe.name}`;
+        drawInventory();
+        drawHotbar();
+        showToast(`Crafted ${recipe.name}.`);
+      }
+
+      function drawHotbar() {
+        const inventory = currentInventory();
+        $("#hotbar").innerHTML = inventory.hotbar.map((key, index) => {
+          const item = stackForHotbar(inventory, key);
+          return `<button type="button" class="hotbar-slot${state.selectedHotbar === index ? " selected" : ""}" data-hotbar-slot="${index}" aria-pressed="${state.selectedHotbar === index}">
+            <span class="hotbar-key">${index + 1}</span>${item ? `<span class="item-model ${item.icon}" aria-hidden="true"></span>
+              <span class="hotbar-label">${item.name}</span><span class="hotbar-count">×${formatAmount(item.amount)}</span>` : '<span class="hotbar-label">Empty</span>'}
+          </button>`;
+        }).join("");
+        $$("[data-hotbar-slot]").forEach(button => button.addEventListener("click", () => {
+          state.selectedHotbar = Number(button.dataset.hotbarSlot);
+          drawHotbar();
+        }));
+      }
+
+      function updateWorldTimeDisplay() {
+        const daylight = (Math.cos((state.worldTime / 240) * Math.PI * 2) + 1) / 2;
+        $("#world-time").textContent = daylight > .35 ? "Day" : "Night";
+      }
+
+      function gather() {
+        if (!nearNode) {
+          return;
+        }
+        if (!selectedItemCanMine(nearNode.type)) {
+          const tool = nearNode.type === "tree" || nearNode.type === "hemp" ? "hatchet" : "pickaxe";
+          showToast(`Equip a ${tool} in your hotbar to gather this resource.`);
+          return;
+        }
+        const kind = nearNode.type === "tree" ? "wood" : nearNode.type === "hemp" ? "cloth" : nearNode.type;
+        const multiplier = state.server === "Survival#3" ? 4 : 1;
+        const amount = Math.ceil(nearNode.amount / nearNode.max) * multiplier;
+        const inventory = currentInventory();
+        const gathered = addStack(inventory, "resource", kind, amount);
+        if (gathered < amount) {
+          inventory.drops.push({ type: "resource", key: kind, amount: amount - gathered, x: nearNode.x + 25, y: nearNode.y + 20 });
+          world.drops = inventory.drops;
+        }
+        nearNode.remaining -= 1;
+        playGatherSound();
+        if (inventory.infiniteResources) {
+          if (nearNode.remaining <= 0) nearNode.removed = true;
+          showToast(`∞ ${resourceTypes.find(item => item.key === kind).name}${nearNode.removed ? " · node depleted" : ""}`);
+        } else if (nearNode.remaining <= 0) {
+          nearNode.removed = true;
+          showToast(`${nearNode.name} depleted.`);
+        } else {
+          showToast(gathered ? `+${gathered} ${resourceTypes.find(item => item.key === kind).name}` : "Inventory full; resource dropped nearby.");
+        }
+        if (!$("#inventory-overlay").hidden) drawInventory();
+      }
+
+      function huntAnimal(animal) {
+        if (!animal?.alive) return;
+        const weapon = selectedHotbarItem();
+        const damage = animalDamage(weapon);
+        if (!damage) {
+          showToast(weapon?.name === "Torch" ? "A torch cannot damage animals. Equip the Stone or a weapon." : "Equip the Stone or a weapon to attack.");
+          return;
+        }
+        animal.health = Math.max(0, animal.health - damage);
+        let fleeX = animal.x - player.x, fleeY = animal.y - player.y;
+        let fleeLength = Math.hypot(fleeX, fleeY);
+        if (!fleeLength) {
+          fleeX = -Math.cos(player.facing);
+          fleeY = -Math.sin(player.facing);
+          fleeLength = 1;
+        }
+        animal.fleeX = fleeX / fleeLength;
+        animal.fleeY = fleeY / fleeLength;
+        animal.fleeTimer = 1.5;
+        if (animal.health > 0) {
+          showToast(`${animal.type[0].toUpperCase() + animal.type.slice(1)} hit for ${damage} damage · ${animal.health} health`);
+          return;
+        }
+        animal.alive = false;
+        const loot = animal.type === "chicken"
+          ? { meat: 2, bones: 1 }
+          : animal.type === "cow"
+            ? { meat: 6, bones: 3, fur: 3 }
+            : { meat: 4, bones: 2, fur: 4 };
+        const inventory = currentInventory();
+        const obtained = [];
+        Object.entries(loot).forEach(([key, amount]) => {
+          const added = addStack(inventory, "resource", key, amount);
+          if (added) obtained.push(`${formatAmount(added)} ${resourceTypes.find(resource => resource.key === key).name}`);
+          if (added < amount) {
+            inventory.drops.push({ type: "resource", key, amount: amount - added, x: animal.x + 18, y: animal.y + 18 });
+          }
+        });
+        world.drops = inventory.drops;
+        showToast(`${animal.type[0].toUpperCase() + animal.type.slice(1)} hunted · ${obtained.join(", ") || "loot dropped nearby"}`);
+        if (!$("#inventory-overlay").hidden) drawInventory();
+      }
+
+      function animalCanMoveAt(animal, x, y) {
+        const blockedByWorld = world.obstacles.some(obstacle => {
+          if (obstacle.removed || obstacle.node?.removed) return false;
+          const reach = obstacle.radius + animal.radius * .7;
+          return (x - obstacle.x) ** 2 + (y - obstacle.y) ** 2 < reach * reach;
+        });
+        if (blockedByWorld) return false;
+        return !world.animals.some(other => {
+          if (other === animal || !other.alive) return false;
+          const reach = (animal.radius + other.radius) * .55;
+          return (x - other.x) ** 2 + (y - other.y) ** 2 < reach * reach;
+        });
+      }
+
+      function playGatherSound() {
+        if (!state.volume) return;
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContextClass) return;
+        if (!audioContext) audioContext = new AudioContextClass();
+        if (audioContext.state === "suspended") audioContext.resume();
+        const oscillator = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        oscillator.type = "sine";
+        oscillator.frequency.setValueAtTime(460, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + .08);
+        gain.gain.setValueAtTime(state.volume * .08, audioContext.currentTime);
+        gain.gain.exponentialRampToValueAtTime(.001, audioContext.currentTime + .1);
+        oscillator.connect(gain); gain.connect(audioContext.destination);
+        oscillator.start(); oscillator.stop(audioContext.currentTime + .1);
+      }
+
+      function update(delta) {
+        const horizontal = (keys.has("d") || keys.has("arrowright") ? 1 : 0) - (keys.has("a") || keys.has("arrowleft") ? 1 : 0);
+        const vertical = (keys.has("s") || keys.has("arrowdown") ? 1 : 0) - (keys.has("w") || keys.has("arrowup") ? 1 : 0);
+        state.worldTime = (state.worldTime + delta) % 240;
+        updateWorldTimeDisplay();
+        player.walking = Boolean(horizontal || vertical);
+        if (player.walking) player.walkPhase += delta * 14;
+        if (horizontal || vertical) {
+          const magnitude = Math.hypot(horizontal, vertical);
+          const dx = horizontal / magnitude, dy = vertical / magnitude;
+          player.facing = Math.atan2(dy, dx);
+          const speed = 195 * state.sensitivity * delta;
+          if (!collidesAt(player.x + dx * speed, player.y)) player.x += dx * speed;
+          if (!collidesAt(player.x, player.y + dy * speed)) player.y += dy * speed;
+        }
+        world.animals.forEach(animal => {
+          if (!animal.alive || animal.fleeTimer <= 0) return;
+          animal.fleeTimer = Math.max(0, animal.fleeTimer - delta);
+          const speed = 230 * Math.min(1, animal.fleeTimer / .35 + .35);
+          const nextX = Math.max(animal.radius, Math.min(world.width - animal.radius, animal.x + animal.fleeX * speed * delta));
+          const nextY = Math.max(animal.radius, Math.min(world.height - animal.radius, animal.y + animal.fleeY * speed * delta));
+          if (animalCanMoveAt(animal, nextX, animal.y)) animal.x = nextX;
+          if (animalCanMoveAt(animal, animal.x, nextY)) animal.y = nextY;
+        });
+        nearNode = closestNode();
+        nearAnimal = closestAnimal();
+        const prompt = $("#nearby-prompt");
+        prompt.hidden = !nearNode && !nearAnimal;
+        if (nearNode) {
+          $("#nearby-prompt strong").textContent = `${nearNode.name} · ${nearNode.remaining} left`;
+          $("#nearby-prompt span").textContent = selectedItemCanMine(nearNode.type)
+            ? "Left click to gather"
+            : `Equip a ${nearNode.type === "tree" || nearNode.type === "hemp" ? "hatchet" : "pickaxe"} to gather`;
+        } else if (nearAnimal) {
+          $("#nearby-prompt strong").textContent = `${nearAnimal.type[0].toUpperCase() + nearAnimal.type.slice(1)} nearby`;
+          const damage = animalDamage(selectedHotbarItem());
+          $("#nearby-prompt span").textContent = damage ? `Left click to attack · ${damage} damage` : "Equip Stone or a weapon to attack";
+        }
+      }
+
+      function frame(time) {
+        const width = canvas.clientWidth, height = canvas.clientHeight;
+        if (!width || !height || !$("#game-screen").classList.contains("active")) {
+          animationFrame = 0;
+          return;
+        }
+        const delta = Math.min((time - (lastTime || time)) / 1000, .05);
+        lastTime = time;
+        const panelOpen = !$("#game-sidebar").hidden ||
+          ["map-overlay", "inventory-overlay", "game-settings-overlay"].some(id => !$("#" + id).hidden);
+        if (!panelOpen) update(delta);
+        const cameraX = Math.max(0, Math.min(world.width - width, player.x - width / 2));
+        const cameraY = Math.max(0, Math.min(world.height - height, player.y - height / 2));
+        drawWorld(cameraX, cameraY, width, height);
+        if (!$("#map-overlay").hidden) drawMap();
+        animationFrame = requestAnimationFrame(frame);
+      }
+
+      function closeGamePanels() {
+        $("#game-sidebar").hidden = true;
+        ["map-overlay", "inventory-overlay", "game-settings-overlay"].forEach(id => { $("#" + id).hidden = true; });
+        keys.clear();
+        player.walking = false;
+      }
+
+      function toggleGamePanel(id) {
+        const panel = $("#" + id);
+        const shouldOpen = panel.hidden;
+        closeGamePanels();
+        if (!shouldOpen) return;
+        panel.hidden = false;
+        if (id === "map-overlay") resizeMapCanvas();
+        if (id === "inventory-overlay") drawInventory();
+        if (id === "game-settings-overlay") syncSettingsControls();
+      }
+
+      function startGame(server) {
+        if (!Object.prototype.hasOwnProperty.call(state.serverPlayers, server)) return;
+        if (state.joinedServer !== server && state.serverPlayers[server] >= serverCapacity) {
+          showScreen("server-screen");
+          return;
+        }
+        if (state.joinedServer && state.joinedServer !== server) {
+          state.serverPlayers[state.joinedServer] = Math.max(0, state.serverPlayers[state.joinedServer] - 1);
+        }
+        if (state.joinedServer !== server) state.serverPlayers[server] += 1;
+        state.joinedServer = server;
+        state.server = server;
+        $("#current-server").textContent = server;
+        updateServerCounts();
+        closeGamePanels();
+        const inventory = state.inventoriesByServer[server];
+        const receivedStarterKit = !inventory.initialized;
+        if (receivedStarterKit) {
+          addStack(inventory, "item", "Torch", 1);
+          addStack(inventory, "item", "Stone", 1);
+          if (server === "build#4") {
+            addStack(inventory, "item", "Stone Hatchet", 1);
+            addStack(inventory, "item", "Stone Pickaxe", 1);
+            inventory.hotbar[2] = "item:Stone Hatchet";
+            inventory.hotbar[3] = "item:Stone Pickaxe";
+          }
+          inventory.initialized = true;
+        }
+        world.drops = inventory.drops;
+        player.x = 1600;
+        player.y = 1200;
+        generateWorld();
+        drawInventory();
+        drawHotbar();
+        updateWorldTimeDisplay();
+        showScreen("game-screen");
+        resizeCanvas();
+        if (receivedStarterKit) showToast(server === "build#4"
+          ? "Build kit received: Torch, Stone, Stone Hatchet, and Stone Pickaxe."
+          : "Starter kit received: Torch and Stone.");
+        if (!animationFrame) animationFrame = requestAnimationFrame(frame);
+      }
+
+      $$("[data-join]").forEach(button => button.addEventListener("click", () => startGame(button.dataset.join)));
+      function leaveServer() {
+        closeGamePanels();
+        if (state.joinedServer) {
+          state.serverPlayers[state.joinedServer] = Math.max(0, state.serverPlayers[state.joinedServer] - 1);
+          state.joinedServer = null;
+        }
+        updateServerCounts();
+        showScreen("server-screen");
+      }
+      $("#leave-game").addEventListener("click", leaveServer);
+      $("#sidebar-leave").addEventListener("click", leaveServer);
+      $("#sidebar-settings").addEventListener("click", () => toggleGamePanel("game-settings-overlay"));
+      $$("[data-close-overlay]").forEach(button => button.addEventListener("click", () => {
+        $("#" + button.dataset.closeOverlay).hidden = true;
+        keys.clear();
+        player.walking = false;
+      }));
+
+      canvas.addEventListener("pointerdown", event => {
+        if (event.button !== 0 || !$("#game-screen").classList.contains("active")) return;
+        if (!$("#game-sidebar").hidden || ["map-overlay", "inventory-overlay", "game-settings-overlay"].some(id => !$("#" + id).hidden)) return;
+        const rect = canvas.getBoundingClientRect();
+        const cameraX = Math.max(0, Math.min(world.width - rect.width, player.x - rect.width / 2));
+        const cameraY = Math.max(0, Math.min(world.height - rect.height, player.y - rect.height / 2));
+        const worldX = event.clientX - rect.left + cameraX;
+        const worldY = event.clientY - rect.top + cameraY;
+        const inventory = currentInventory();
+        let dropTarget = null;
+        let dropDistance = 36;
+        for (const drop of world.drops) {
+          const distance = Math.hypot(drop.x - worldX, drop.y - worldY);
+          if (distance < dropDistance) { dropTarget = drop; dropDistance = distance; }
+        }
+        if (dropTarget) {
+          if (Math.hypot(player.x - dropTarget.x, player.y - dropTarget.y) > 90) {
+            showToast("Move closer to pick that up.");
+            return;
+          }
+          const pickedUp = addStack(inventory, dropTarget.type, dropTarget.key, dropTarget.amount);
+          dropTarget.amount -= pickedUp;
+          if (!dropTarget.amount) world.drops.splice(world.drops.indexOf(dropTarget), 1);
+          drawInventory();
+          drawHotbar();
+          showToast(pickedUp ? `Picked up ${pickedUp} ${stackName(dropTarget.type, dropTarget.key)}.` : "Inventory full.");
+          return;
+        }
+        let animalTarget = null;
+        let animalDistance = 50;
+        for (const animal of world.animals) {
+          if (!animal.alive) continue;
+          const distance = Math.hypot(animal.x - worldX, animal.y - worldY);
+          if (distance < animal.radius + 14 && distance < animalDistance) {
+            animalTarget = animal;
+            animalDistance = distance;
+          }
+        }
+        if (animalTarget) {
+          if (Math.hypot(player.x - animalTarget.x, player.y - animalTarget.y) > 100) {
+            showToast("Move closer to hunt this animal.");
+            return;
+          }
+          huntAnimal(animalTarget);
+          return;
+        }
+        let target = null;
+        let targetDistance = Infinity;
+        world.nodes.forEach(node => {
+          if (node.removed) return;
+          const distance = Math.hypot(node.x - worldX, node.y - worldY);
+          if (distance < Math.max(30, node.radius + 16) && distance < targetDistance) {
+            target = node;
+            targetDistance = distance;
+          }
+        });
+        if (!target) return;
+        if (Math.hypot(player.x - target.x, player.y - target.y) > 90) {
+          showToast("Move closer to gather this resource.");
+          return;
+        }
+        nearNode = target;
+        gather();
+      });
+
+      window.addEventListener("keydown", event => {
+        const key = event.key.toLowerCase();
+        if (!$("#game-screen").classList.contains("active")) return;
+        if (["arrowup", "arrowdown", "arrowleft", "arrowright", " ", "Tab"].includes(event.key)) event.preventDefault();
+        if (event.key === "Escape") {
+          const openPanel = ["game-settings-overlay", "inventory-overlay", "map-overlay"]
+            .find(id => !$("#" + id).hidden);
+          if (openPanel) $("#" + openPanel).hidden = true;
+          else $("#game-sidebar").hidden = true;
+          keys.clear();
+          player.walking = false;
+          return;
+        }
+        if (event.key === "Tab") {
+          if (event.repeat) return;
+          if (["map-overlay", "inventory-overlay", "game-settings-overlay"].some(id => !$("#" + id).hidden)) return;
+          $("#game-sidebar").hidden = !$("#game-sidebar").hidden;
+          keys.clear();
+          player.walking = false;
+          return;
+        }
+        if ((key === "m" || key === "t") && !event.repeat) {
+          event.preventDefault();
+          toggleGamePanel(key === "m" ? "map-overlay" : "inventory-overlay");
+          return;
+        }
+        if (!$("#game-sidebar").hidden || ["map-overlay", "inventory-overlay", "game-settings-overlay"].some(id => !$("#" + id).hidden)) {
+          return;
+        }
+        if (/^[1-5]$/.test(key) && !event.repeat) {
+          state.selectedHotbar = Number(key) - 1;
+          drawHotbar();
+          return;
+        }
+        if (["w", "a", "s", "d", "arrowup", "arrowdown", "arrowleft", "arrowright"].includes(key)) {
+          keys.add(key);
+        }
+      });
+      window.addEventListener("keyup", event => keys.delete(event.key.toLowerCase()));
+      window.addEventListener("blur", () => keys.clear());
+      window.addEventListener("resize", () => {
+        resizeCanvas();
+        if (!$("#map-overlay").hidden) resizeMapCanvas();
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          keys.clear();
+        }
+      });
+
+      updateSpuds();
+      syncSettingsControls();
+      drawShop();
+      updateServerCounts();
+    })();
+  </script>
+</body>
+</html>
