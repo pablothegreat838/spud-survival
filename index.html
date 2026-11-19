@@ -150,7 +150,9 @@
     .inner-screen {
       position: relative;
       flex-direction: column;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
       background:
         radial-gradient(ellipse at 90% 4%, rgba(127,101,43,.12), transparent 28%),
         linear-gradient(140deg, #171813, #10110e 62%);
@@ -388,8 +390,65 @@
     .game-settings-card { width: min(680px, calc(100% - 32px)); }
     .game-settings-card .settings-panel { max-width: none; }
 
+    .mobile-controls { display: none; }
+    .mobile-dpad {
+      position: absolute;
+      z-index: 5;
+      bottom: 18px;
+      left: 16px;
+      width: 132px;
+      height: 132px;
+    }
+    .mobile-dpad button,
+    .mobile-actions button {
+      border: 1px solid rgba(240,205,120,.38);
+      background: rgba(14,16,13,.86);
+      color: var(--ink);
+      box-shadow: 0 8px 24px rgba(0,0,0,.24);
+      touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .mobile-dpad button {
+      position: absolute;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      font-size: 20px;
+      line-height: 1;
+    }
+    .mobile-dpad button:active,
+    .mobile-actions button:active { background: rgba(216,180,93,.28); transform: scale(.96); }
+    .mobile-dpad [data-direction="up"] { top: 0; left: 44px; }
+    .mobile-dpad [data-direction="left"] { top: 44px; left: 0; }
+    .mobile-dpad [data-direction="down"] { bottom: 0; left: 44px; }
+    .mobile-dpad [data-direction="right"] { top: 44px; right: 0; }
+    .mobile-actions {
+      position: absolute;
+      z-index: 5;
+      right: 16px;
+      bottom: 18px;
+      display: grid;
+      grid-template-columns: repeat(2, 52px);
+      gap: 8px;
+    }
+    .mobile-actions button {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      font-size: 10px;
+      font-weight: 800;
+    }
+    .mobile-actions #mobile-gather { grid-row: span 2; width: 58px; height: 58px; align-self: center; border-color: var(--gold); color: var(--gold-bright); }
+
     @media (max-width: 1100px) {
       .server-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 850px), (pointer: coarse) {
+      .mobile-controls { display: block; }
+      .hotbar { bottom: 158px; }
+      .hud-bottom { display: none; }
     }
 
     @media (max-width: 850px) {
@@ -408,20 +467,41 @@
     }
 
     @media (max-width: 520px) {
+      html, body { min-width: 280px; }
+      #main-menu { align-items: flex-start; overflow-y: auto; }
+      .menu-layout { width: calc(100% - 32px); gap: 24px; padding: 28px 0; }
+      .brand-mark { width: 40px; height: 40px; }
+      .hero h1 { margin: 17px 0 10px; font-size: clamp(48px, 15vw, 68px); }
+      .hero-copy { font-size: 14px; }
+      .hero-meta { margin-top: 22px; }
+      .menu-actions { grid-template-columns: 1fr; gap: 9px; }
+      .menu-actions .button:first-child { grid-column: auto; }
+      .menu-actions .button { min-height: 52px; }
       .topbar { min-height: 64px; padding: 0 17px; }
       .topbar-brand { font-size: 11px; }
       .topbar-right { gap: 10px; }
-      .page-wrap, .shop-wrap { padding-top: 37px; }
+      .currency-pill { padding: 7px 9px; }
+      .back-button { white-space: nowrap; }
+      .page-wrap, .shop-wrap { width: calc(100% - 32px); padding-top: 28px; }
+      .page-heading { margin-bottom: 24px; }
+      .page-heading h2 { font-size: 36px; }
+      #server-screen .page-wrap { width: calc(100% - 32px); padding-top: 28px; }
+      #server-screen .page-heading { margin-bottom: 24px; }
+      #server-screen .page-heading h2 { font-size: 40px; }
+      .server-grid { grid-template-columns: 1fr; gap: 12px; }
+      .server-card { min-height: 220px; padding: 20px; }
+      .server-card h3 { font-size: 26px; }
       .shop-heading-row { align-items: flex-start; flex-direction: column; }
       .shop-tabs { overflow-x: auto; gap: 0; }
       .tab-button { flex: 0 0 auto; padding-right: 12px; padding-left: 12px; font-size: 12px; }
-      .crate-grid { gap: 10px; }
-      .crate-card { padding: 13px; }
-      .crate-art { height: 90px; font-size: 39px; }
+      .crate-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+      .crate-card { min-height: 250px; padding: 12px; }
+      .crate-art { height: 82px; font-size: 36px; }
       .crate-buy-row { align-items: flex-start; flex-direction: column; }
       .crate-buy-row .button { width: 100%; }
       .skin-grid { grid-template-columns: 1fr; }
-      .setting-row { grid-template-columns: 1fr; gap: 12px; }
+      .settings-panel { padding: 4px 14px; }
+      .setting-row { grid-template-columns: 1fr; gap: 10px; padding: 18px 0; }
       .quality-options { justify-content: flex-start; }
       .hud-top { top: 10px; right: 10px; left: 10px; }
       .hud-card { padding: 9px; }
@@ -429,11 +509,15 @@
       .controls-hint { font-size: 10px; }
       .nearby-prompt { min-width: 150px; padding: 8px; }
       .game-exit { padding: 0 9px; }
-      .hotbar { bottom: 77px; gap: 4px; }
-      .hotbar-slot { width: 54px; height: 66px; }
-      .game-modal-card { padding: 17px; }
+      .hotbar { bottom: 154px; gap: 3px; }
+      .hotbar-slot { width: 48px; height: 58px; }
+      .hotbar-icon { transform: scale(.82); }
+      .mobile-dpad { bottom: 10px; left: 8px; transform: scale(.84); transform-origin: bottom left; }
+      .mobile-actions { right: 8px; bottom: 10px; transform: scale(.88); transform-origin: bottom right; }
+      .toast { top: 66px; max-width: calc(100% - 24px); text-align: center; }
+      .game-modal-card { width: calc(100% - 16px); max-height: 96vh; padding: 14px; }
       .game-modal-header h2 { font-size: 23px; }
-      #map-canvas { height: 50vh; }
+      #map-canvas { height: 48vh; min-height: 260px; }
       .inventory-content { grid-template-columns: 1fr; }
       .inventory-slots { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .inventory-slot { min-height: 68px; }
@@ -576,6 +660,20 @@
         <button id="leave-game" class="button game-exit">Leave world</button>
       </div>
       <div id="hotbar" class="hotbar" role="toolbar" aria-label="Hotbar"></div>
+      <div class="mobile-controls" aria-label="Touch controls">
+        <div class="mobile-dpad">
+          <button type="button" data-direction="up" aria-label="Move up">▲</button>
+          <button type="button" data-direction="left" aria-label="Move left">◀</button>
+          <button type="button" data-direction="down" aria-label="Move down">▼</button>
+          <button type="button" data-direction="right" aria-label="Move right">▶</button>
+        </div>
+        <div class="mobile-actions">
+          <button id="mobile-gather" type="button" aria-label="Gather or attack">ACT</button>
+          <button id="mobile-map" type="button" aria-label="Open map">MAP</button>
+          <button id="mobile-inventory" type="button" aria-label="Open inventory">PACK</button>
+          <button id="mobile-menu" type="button" aria-label="Open world menu">MENU</button>
+        </div>
+      </div>
       <aside id="game-sidebar" class="game-sidebar" aria-label="In-game menu" hidden>
         <div class="sidebar-heading">World menu</div>
         <button id="sidebar-settings" class="button">Settings</button>
@@ -1979,6 +2077,50 @@
       });
       window.addEventListener("keyup", event => keys.delete(event.key.toLowerCase()));
       window.addEventListener("blur", () => keys.clear());
+      const mobileDirectionKeys = { up: "w", down: "s", left: "a", right: "d" };
+      $$("[data-direction]").forEach(button => {
+        const key = mobileDirectionKeys[button.dataset.direction];
+        const press = event => {
+          event.preventDefault();
+          if (!$("#game-screen").classList.contains("active")) return;
+          if (!$("#game-sidebar").hidden || ["map-overlay", "inventory-overlay", "game-settings-overlay"].some(id => !$("#" + id).hidden)) return;
+          button.setPointerCapture?.(event.pointerId);
+          keys.add(key);
+        };
+        const release = event => {
+          event.preventEvent?.();
+          event.preventDefault?.();
+          keys.delete(key);
+        };
+        button.addEventListener("pointerdown", press);
+        button.addEventListener("pointerup", release);
+        button.addEventListener("pointercancel", release);
+        button.addEventListener("lostpointercapture", () => keys.delete(key));
+        button.addEventListener("contextmenu", event => event.preventDefault());
+      });
+      $("#mobile-gather").addEventListener("pointerdown", event => {
+        event.preventDefault();
+        if (nearNode) {
+          gather();
+        } else if (nearAnimal) {
+          huntAnimal(nearAnimal);
+        }
+      });
+      $("#mobile-map").addEventListener("pointerdown", event => {
+        event.preventDefault();
+        toggleGamePanel("map-overlay");
+      });
+      $("#mobile-inventory").addEventListener("pointerdown", event => {
+        event.preventDefault();
+        toggleGamePanel("inventory-overlay");
+      });
+      $("#mobile-menu").addEventListener("pointerdown", event => {
+        event.preventDefault();
+        if (["map-overlay", "inventory-overlay", "game-settings-overlay"].some(id => !$("#" + id).hidden)) return;
+        $("#game-sidebar").hidden = !$("#game-sidebar").hidden;
+        keys.clear();
+        player.walking = false;
+      });
       window.addEventListener("resize", () => {
         resizeCanvas();
         if (!$("#map-overlay").hidden) resizeMapCanvas();
